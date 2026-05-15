@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate, useLocation,
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://studio-os-backend-production.up.railway.app';
 axios.defaults.baseURL = API_URL;
 
 // 1. CONFIGURACIÓN DE SEGURIDAD PARA AXIOS
