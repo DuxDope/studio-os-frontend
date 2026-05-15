@@ -314,7 +314,7 @@ function AdminPanel() {
       await axios.patch(`/cotizaciones/${modal.cot.id}/responder`, fd);
       
       // MAGIC LINK GENERADO AQUÍ
-      const linkReserva = `https://studio-os-frontend-iota.vercel.app/reserva/${modal.cot.id}`;
+      const linkReserva = `https://studiotatto-iota.vercel.app/reserva/${modal.cot.id}`;
       const textoPresupuesto = `¡Hola ${modal.cot.cliente}! Revisé tu idea para el tatuaje. El valor estimado es de $${respuesta.precio} y nos tomaría unas ${respuesta.horas} horas de sesión. ${respuesta.notas ? '\nNotas técnicas: ' + respuesta.notas : ''}\n\nPara confirmar tu diseño y elegir tu hora, entra a tu link personal:\n${linkReserva}`;
       
       if (metodo === 'whatsapp') {
