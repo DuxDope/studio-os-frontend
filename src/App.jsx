@@ -225,7 +225,6 @@ function Formulario() {
 function Sidebar({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  // NUEVO: Estado para controlar si el menú está abierto o cerrado en celular
   const [menuAbierto, setMenuAbierto] = useState(false);
 
   const menuItems = [
@@ -236,7 +235,6 @@ function Sidebar({ children }) {
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white relative">
       
-      {/* BOTÓN HAMBURGUESA (Solo visible en celular) */}
       <button 
         onClick={() => setMenuAbierto(!menuAbierto)}
         className="md:hidden fixed top-4 left-4 z-[70] bg-zinc-900 border border-zinc-800 p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-colors"
@@ -244,7 +242,6 @@ function Sidebar({ children }) {
         <span className="text-xl leading-none">{menuAbierto ? '✕' : '☰'}</span>
       </button>
 
-      {/* FONDO OSCURO (Aparece cuando el menú está abierto en celular para oscurecer el fondo) */}
       {menuAbierto && (
         <div 
           onClick={() => setMenuAbierto(false)}
@@ -252,7 +249,6 @@ function Sidebar({ children }) {
         ></div>
       )}
 
-      {/* MENÚ LATERAL (Oculto en móvil por defecto, visible en PC siempre) */}
       <aside className={`fixed md:sticky top-0 h-screen w-64 bg-zinc-900 border-r border-zinc-800 p-6 flex flex-col z-[60] transition-transform duration-300 ease-in-out ${
         menuAbierto ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
@@ -266,7 +262,7 @@ function Sidebar({ children }) {
             <Link
               key={item.ruta}
               to={item.ruta}
-              onClick={() => setMenuAbierto(false)} // Cierra el menú al hacer clic en una opción
+              onClick={() => setMenuAbierto(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
                 location.pathname === item.ruta 
                 ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
@@ -287,7 +283,6 @@ function Sidebar({ children }) {
         </button>
       </aside>
       
-      {/* CONTENEDOR PRINCIPAL */}
       <main className="flex-grow w-full p-4 pt-20 md:p-8 h-screen overflow-y-auto overflow-x-hidden">
         {children}
       </main>
@@ -300,7 +295,6 @@ function AdminPanel() {
   const [cotizaciones, setCotizaciones] = useState([])
   const [cargando, setCargando] = useState(true)
   
-  // NUEVO ESTADO PARA EL FILTRO INTELIGENTE
   const [filtroEstado, setFiltroEstado] = useState('pendiente');
   
   const [modal, setModal] = useState({ abierto: false, cot: null })
@@ -343,7 +337,6 @@ function AdminPanel() {
     try {
       await axios.patch(`/cotizaciones/${modal.cot.id}/responder`, fd);
       
-      // MAGIC LINK CORREGIDO CON TU DOMINIO REAL
       const linkReserva = `https://studio-os-frontend-iota.vercel.app/reserva/${modal.cot.id}`;
       const textoPresupuesto = `¡Hola ${modal.cot.cliente}! Revisé tu idea para el tatuaje. El valor estimado es de $${respuesta.precio} y nos tomaría unas ${respuesta.horas} horas de sesión. ${respuesta.notas ? '\nNotas técnicas: ' + respuesta.notas : ''}\n\nPara confirmar tu diseño y elegir tu hora, entra a tu link personal:\n${linkReserva}`;
       
@@ -397,7 +390,6 @@ function AdminPanel() {
     }
   }
 
-  // Lógica de filtrado dinámico
   const visibles = filtroEstado === 'todos' 
     ? cotizaciones 
     : cotizaciones.filter(c => c.estado === filtroEstado);
@@ -467,7 +459,13 @@ function AdminPanel() {
           {visibles.map(c => (
             <div key={c.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden hover:border-emerald-500/50 transition-all flex flex-col">
               <div className="relative h-64 cursor-zoom-in" onClick={() => setFotoFull(getImagenUrl(c.imagen_url))}>
-                <img src={getImagenUrl(c.imagen_url)} className="w-full h-full object-cover" alt="Idea" />
+                {/* AQUI ESTÁ EL FIX: Le agregamos el onError a la foto de la Mesa de Trabajo */}
+                <img 
+                  src={getImagenUrl(c.imagen_url)} 
+                  className="w-full h-full object-cover" 
+                  alt="Idea" 
+                  onError={(e) => { e.target.src = 'https://placehold.co/150x150/18181b/10b981?text=Sin+Foto' }}
+                />
                 <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-[9px] font-black uppercase bg-black/80 text-emerald-400 border border-emerald-500/30">
                   {c.estado}
                 </div>
@@ -554,7 +552,13 @@ function AdminPanel() {
 
         {fotoFull && (
           <div onClick={() => setFotoFull(null)} className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 z-[100] cursor-zoom-out">
-            <img src={fotoFull} className="max-w-full max-h-[90vh] rounded-2xl object-contain" alt="Full" />
+            {/* TAMBIEN AQUI: Para cuando hacen zoom en la foto */}
+            <img 
+              src={fotoFull} 
+              className="max-w-full max-h-[90vh] rounded-2xl object-contain" 
+              alt="Full" 
+              onError={(e) => { e.target.src = 'https://placehold.co/150x150/18181b/10b981?text=Sin+Foto' }}
+            />
           </div>
         )}
       </div>
@@ -567,7 +571,6 @@ function Calendario() {
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
   const [fechaBase, setFechaBase] = useState(new Date()); 
   
-  // ESTADOS PARA EL MODAL DE REPROGRAMAR
   const [modalReagendar, setModalReagendar] = useState({ abierto: false, cita: null });
   const [nuevaFecha, setNuevaFecha] = useState('');
   
@@ -614,7 +617,6 @@ function Calendario() {
     setDiaSeleccionado(null); 
   };
 
-  // FUNCIÓN PARA REPROGRAMAR EN EL BACKEND
   const confirmarReagendamiento = async () => {
     if (!nuevaFecha) return alert("Por favor selecciona una nueva fecha y hora.");
     const fechaObj = new Date(nuevaFecha);
@@ -639,14 +641,13 @@ function Calendario() {
     }
   };
 
-  // NUEVO: FUNCIÓN PARA ELIMINAR CITA
   const eliminarCita = async (citaId) => {
     if (!window.confirm("🚨 ¿Estás seguro de que deseas cancelar y eliminar esta cita del calendario?")) return;
     
     try {
       await axios.delete(`/citas/${citaId}`);
       alert("✅ Cita eliminada correctamente");
-      cargarCitas(); // Refrescamos el calendario
+      cargarCitas(); 
     } catch (error) {
       alert("Error al eliminar la cita.");
     }
@@ -656,7 +657,6 @@ function Calendario() {
     <div className="min-h-screen bg-zinc-950 text-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         
-        {/* CABECERA CON BOTONES PARA CAMBIAR DE MES */}
         <header className="flex flex-col md:flex-row justify-between items-center mb-10 border-b border-zinc-800 pb-6 gap-4">
           <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-6">
             <button onClick={() => cambiarMes(-1)} className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center font-black text-zinc-500 hover:text-emerald-400 hover:border-emerald-500 transition-all shadow-lg text-lg md:text-xl">
@@ -675,8 +675,6 @@ function Calendario() {
         </header>
 
         <div className="flex flex-col md:flex-row gap-8">
-          {/* GRILLA DEL CALENDARIO */}
-          {/* Reducimos el gap a 1 en móvil y lo dejamos en 4 para PC */}
           <div className={`grid grid-cols-7 gap-1 md:gap-4 transition-all duration-500 ${diaSeleccionado ? 'w-full md:w-2/3' : 'w-full'}`}>
             {['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'].map(d => (
               <div key={d} className="text-center text-[10px] md:text-xs font-black text-zinc-600 mb-1 md:mb-2 uppercase tracking-widest">
@@ -704,7 +702,6 @@ function Calendario() {
                     {dia}
                   </span>
                   <div className="mt-auto flex justify-center flex-wrap gap-1">
-                    {/* Dibujamos un puntito verde por CADA cita que haya en ese día */}
                     {citasHoy.map((_, i) => (
                       <div key={i} className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"></div>
                     ))}
@@ -714,7 +711,6 @@ function Calendario() {
             })}
           </div>
 
-          {/* PANEL LATERAL DE DETALLES */}
           {diaSeleccionado && (
             <div className="w-full md:w-1/3 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 animate-in slide-in-from-right md:slide-in-from-right-8 duration-300 flex flex-col h-fit md:sticky md:top-8 mt-6 md:mt-0">
               <div className="flex justify-between items-start mb-6 border-b border-zinc-800 pb-4">
@@ -778,7 +774,6 @@ function Calendario() {
                             "{idea}"
                           </p>
 
-                          {/* BOTONES DE REPROGRAMAR Y ELIMINAR */}
                           <div className="mt-3 flex gap-2">
                             <button 
                               onClick={(e) => { e.stopPropagation(); setModalReagendar({ abierto: true, cita: cita }); }}
@@ -803,7 +798,6 @@ function Calendario() {
           )}
         </div>
 
-        {/* MODAL: REPROGRAMAR CITA */}
         {modalReagendar.abierto && (
           <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[60] text-white">
             <div className="bg-zinc-900 border border-emerald-500/30 p-8 rounded-[2rem] w-full max-w-md space-y-6 shadow-2xl">
@@ -932,7 +926,13 @@ function PortalCliente() {
           <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">{cot.cliente}</h2>
           
           <div className="mt-8 relative rounded-2xl overflow-hidden border border-zinc-800 aspect-square">
-            <img src={getImagenUrl(cot.imagen_url)} alt="Diseño" className="w-full h-full object-cover" />
+            {/* Y TAMBIÉN AQUÍ: La foto del cliente en su propio link mágico */}
+            <img 
+              src={getImagenUrl(cot.imagen_url)} 
+              alt="Diseño" 
+              className="w-full h-full object-cover" 
+              onError={(e) => { e.target.src = 'https://placehold.co/150x150/18181b/10b981?text=Sin+Foto' }}
+            />
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black to-transparent p-6 pt-12">
               <p className="text-emerald-400 font-black text-2xl">${Number(cot.precio_estimado).toLocaleString('es-CL')}</p>
               <p className="text-white font-bold text-xs uppercase mt-1">{cot.tiempo_estimado_hrs} Horas de Sesión</p>
@@ -1014,30 +1014,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rutas Públicas */}
         <Route path="/" element={<Inicio />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cotizar" element={<Formulario />} />
-        
-        {/* RUTA MÁGICA PARA EL CLIENTE */}
         <Route path="/reserva/:id" element={<PortalCliente />} />
-        
-        {/* Rutas Privadas */}
-        <Route path="/admin" element={
-          <RutaProtegida>
-            <Sidebar>
-              <AdminPanel />
-            </Sidebar>
-          </RutaProtegida>
-        } />
-        
-        <Route path="/calendario" element={
-          <RutaProtegida>
-            <Sidebar>
-              <Calendario />
-            </Sidebar>
-          </RutaProtegida>
-        } />
+        <Route path="/admin" element={<RutaProtegida><Sidebar><AdminPanel /></Sidebar></RutaProtegida>} />
+        <Route path="/calendario" element={<RutaProtegida><Sidebar><Calendario /></Sidebar></RutaProtegida>} />
       </Routes>
     </BrowserRouter>
   )
