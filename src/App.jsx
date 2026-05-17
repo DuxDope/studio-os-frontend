@@ -225,6 +225,8 @@ function Formulario() {
 function Sidebar({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
+  // NUEVO: Estado para controlar si el menú está abierto o cerrado en celular
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   const menuItems = [
     { nombre: 'Mesa de Trabajo', ruta: '/admin', icono: '🖋️' },
@@ -232,14 +234,39 @@ function Sidebar({ children }) {
   ];
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-white">
-      <aside className="w-64 bg-zinc-900 border-r border-zinc-800 p-6 flex flex-col">
-        <h1 className="text-2xl font-black text-emerald-400 italic mb-10 tracking-tighter uppercase">STUDIO OS</h1>
-        <nav className="flex-grow space-y-2">
+    <div className="flex min-h-screen bg-zinc-950 text-white relative">
+      
+      {/* BOTÓN HAMBURGUESA (Solo visible en celular) */}
+      <button 
+        onClick={() => setMenuAbierto(!menuAbierto)}
+        className="md:hidden fixed top-4 left-4 z-[70] bg-zinc-900 border border-zinc-800 p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-colors"
+      >
+        <span className="text-xl leading-none">{menuAbierto ? '✕' : '☰'}</span>
+      </button>
+
+      {/* FONDO OSCURO (Aparece cuando el menú está abierto en celular para oscurecer el fondo) */}
+      {menuAbierto && (
+        <div 
+          onClick={() => setMenuAbierto(false)}
+          className="md:hidden fixed inset-0 bg-black/80 z-[50] backdrop-blur-sm"
+        ></div>
+      )}
+
+      {/* MENÚ LATERAL (Oculto en móvil por defecto, visible en PC siempre) */}
+      <aside className={`fixed md:sticky top-0 h-screen w-64 bg-zinc-900 border-r border-zinc-800 p-6 flex flex-col z-[60] transition-transform duration-300 ease-in-out ${
+        menuAbierto ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}>
+        
+        <div className="flex justify-between items-center mb-10 mt-12 md:mt-0">
+          <h1 className="text-2xl font-black text-emerald-400 italic tracking-tighter uppercase">STUDIO OS</h1>
+        </div>
+        
+        <nav className="flex flex-col gap-2">
           {menuItems.map((item) => (
             <Link
               key={item.ruta}
               to={item.ruta}
+              onClick={() => setMenuAbierto(false)} // Cierra el menú al hacer clic en una opción
               className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
                 location.pathname === item.ruta 
                 ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
@@ -251,6 +278,7 @@ function Sidebar({ children }) {
             </Link>
           ))}
         </nav>
+        
         <button 
           onClick={() => { localStorage.clear(); navigate('/login'); }}
           className="mt-auto flex items-center gap-3 px-4 py-3 text-red-500 font-bold text-sm hover:bg-red-500/10 rounded-xl transition-all"
@@ -258,7 +286,9 @@ function Sidebar({ children }) {
           <span>🚪</span> Salir
         </button>
       </aside>
-      <main className="flex-grow overflow-y-auto">
+      
+      {/* CONTENEDOR PRINCIPAL */}
+      <main className="flex-grow w-full p-4 pt-20 md:p-8 h-screen overflow-y-auto overflow-x-hidden">
         {children}
       </main>
     </div>
@@ -313,8 +343,8 @@ function AdminPanel() {
     try {
       await axios.patch(`/cotizaciones/${modal.cot.id}/responder`, fd);
       
-      // MAGIC LINK GENERADO AQUÍ
-      const linkReserva = `https://studiotatto-iota.vercel.app/reserva/${modal.cot.id}`;
+      // MAGIC LINK CORREGIDO CON TU DOMINIO REAL
+      const linkReserva = `https://studio-os-frontend-iota.vercel.app/reserva/${modal.cot.id}`;
       const textoPresupuesto = `¡Hola ${modal.cot.cliente}! Revisé tu idea para el tatuaje. El valor estimado es de $${respuesta.precio} y nos tomaría unas ${respuesta.horas} horas de sesión. ${respuesta.notas ? '\nNotas técnicas: ' + respuesta.notas : ''}\n\nPara confirmar tu diseño y elegir tu hora, entra a tu link personal:\n${linkReserva}`;
       
       if (metodo === 'whatsapp') {
@@ -379,7 +409,7 @@ function AdminPanel() {
   if (cargando) return <div className="p-8 text-emerald-400 font-black animate-pulse text-center">CARGANDO MESA DE TRABAJO...</div>;
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
@@ -387,12 +417,12 @@ function AdminPanel() {
             <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Gestión de flujo operativo</p>
           </div>
           
-          <div className="flex bg-zinc-900 p-1 rounded-2xl border border-zinc-800">
+          <div className="flex bg-zinc-900 p-1 rounded-2xl border border-zinc-800 w-full md:w-auto overflow-x-auto scrollbar-hide">
             {['pendiente', 'revisada', 'agendada', 'todos'].map((f) => (
               <button
                 key={f}
                 onClick={() => setFiltroEstado(f)}
-                className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${
+                className={`px-4 py-2 whitespace-nowrap rounded-xl text-[9px] font-black uppercase transition-all ${
                   filtroEstado === f 
                   ? 'bg-emerald-500 text-black shadow-lg' 
                   : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
@@ -430,7 +460,7 @@ function AdminPanel() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {visibles.length === 0 && (
-            <div className="col-span-3 text-center py-20 border border-zinc-800 border-dashed rounded-3xl">
+            <div className="col-span-1 md:col-span-3 text-center py-20 border border-zinc-800 border-dashed rounded-3xl">
               <p className="text-zinc-500 font-black uppercase text-xs">No hay cotizaciones para mostrar</p>
             </div>
           )}
@@ -623,38 +653,39 @@ function Calendario() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-8">
+    <div className="min-h-screen bg-zinc-950 text-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         
         {/* CABECERA CON BOTONES PARA CAMBIAR DE MES */}
-        <header className="flex justify-between items-center mb-10 border-b border-zinc-800 pb-6">
-          <div className="flex items-center gap-6">
-            <button onClick={() => cambiarMes(-1)} className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center font-black text-zinc-500 hover:text-emerald-400 hover:border-emerald-500 transition-all shadow-lg text-xl">
+        <header className="flex flex-col md:flex-row justify-between items-center mb-10 border-b border-zinc-800 pb-6 gap-4">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-6">
+            <button onClick={() => cambiarMes(-1)} className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center font-black text-zinc-500 hover:text-emerald-400 hover:border-emerald-500 transition-all shadow-lg text-lg md:text-xl">
               {"<"}
             </button>
-            <h2 className="text-4xl font-black italic text-emerald-400 uppercase tracking-tighter min-w-[320px] text-center">
+            <h2 className="text-2xl md:text-4xl font-black italic text-emerald-400 uppercase tracking-tighter min-w-[200px] md:min-w-[320px] text-center">
               {fechaBase.toLocaleString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase()}
             </h2>
-            <button onClick={() => cambiarMes(1)} className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center font-black text-zinc-500 hover:text-emerald-400 hover:border-emerald-500 transition-all shadow-lg text-xl">
+            <button onClick={() => cambiarMes(1)} className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center font-black text-zinc-500 hover:text-emerald-400 hover:border-emerald-500 transition-all shadow-lg text-lg md:text-xl">
               {">"}
             </button>
           </div>
-          <Link to="/admin" className="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-[10px] font-black hover:text-emerald-400 transition-all uppercase">
+          <Link to="/admin" className="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-[10px] font-black hover:text-emerald-400 transition-all uppercase w-full md:w-auto text-center">
             VOLVER A MESA
           </Link>
         </header>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col md:flex-row gap-8">
           {/* GRILLA DEL CALENDARIO */}
-          <div className={`grid grid-cols-7 gap-4 transition-all duration-500 ${diaSeleccionado ? 'w-2/3' : 'w-full'}`}>
+          {/* Reducimos el gap a 1 en móvil y lo dejamos en 4 para PC */}
+          <div className={`grid grid-cols-7 gap-1 md:gap-4 transition-all duration-500 ${diaSeleccionado ? 'w-full md:w-2/3' : 'w-full'}`}>
             {['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'].map(d => (
-              <div key={d} className="text-center text-[10px] font-black text-zinc-600 mb-2 uppercase tracking-widest">
+              <div key={d} className="text-center text-[10px] md:text-xs font-black text-zinc-600 mb-1 md:mb-2 uppercase tracking-widest">
                 {d}
               </div>
             ))}
             
             {espaciosVacios.map(e => (
-              <div key={`v-${e}`} className="min-h-[100px] opacity-10"></div>
+              <div key={`v-${e}`} className="min-h-[60px] md:min-h-[100px] opacity-10"></div>
             ))}
             
             {dias.map(dia => {
@@ -665,17 +696,17 @@ function Calendario() {
                 <div 
                   key={dia} 
                   onClick={() => setDiaSeleccionado(dia)}
-                  className={`cursor-pointer min-h-[100px] p-3 rounded-2xl border transition-all flex flex-col ${
+                  className={`cursor-pointer min-h-[60px] md:min-h-[100px] p-1 md:p-3 rounded-xl md:rounded-2xl border transition-all flex flex-col ${
                     esHoy ? 'bg-emerald-500/10 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'
                   }`}
                 >
-                  <span className={`text-xs font-black ${esHoy ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                  <span className={`text-[10px] md:text-xs font-black ${esHoy ? 'text-emerald-400' : 'text-zinc-500'}`}>
                     {dia}
                   </span>
                   <div className="mt-auto flex justify-center flex-wrap gap-1">
                     {/* Dibujamos un puntito verde por CADA cita que haya en ese día */}
                     {citasHoy.map((_, i) => (
-                      <div key={i} className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"></div>
+                      <div key={i} className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"></div>
                     ))}
                   </div>
                 </div>
@@ -685,7 +716,7 @@ function Calendario() {
 
           {/* PANEL LATERAL DE DETALLES */}
           {diaSeleccionado && (
-            <div className="w-1/3 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 animate-in slide-in-from-right duration-300 flex flex-col h-fit sticky top-8">
+            <div className="w-full md:w-1/3 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 animate-in slide-in-from-right md:slide-in-from-right-8 duration-300 flex flex-col h-fit md:sticky md:top-8 mt-6 md:mt-0">
               <div className="flex justify-between items-start mb-6 border-b border-zinc-800 pb-4">
                 <div>
                   <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">DÍA {diaSeleccionado}</h3>
@@ -722,8 +753,8 @@ function Calendario() {
                     const fotoUrl = getImagenUrl(cita.imagen_url || cita.cotizacion?.imagen_url);
 
                     return (
-                      <div key={cita.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 flex gap-4 hover:border-emerald-500/50 transition-all shadow-lg group">
-                        <div className="w-20 h-20 flex-shrink-0 relative overflow-hidden rounded-xl border border-zinc-800">
+                      <div key={cita.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 hover:border-emerald-500/50 transition-all shadow-lg group">
+                        <div className="w-full md:w-20 h-32 md:h-20 flex-shrink-0 relative overflow-hidden rounded-xl border border-zinc-800">
                           <img src={fotoUrl} alt="Referencia" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-80 group-hover:opacity-100" />
                         </div>
                         <div className="flex-1 flex flex-col justify-center overflow-hidden">
@@ -913,7 +944,7 @@ function PortalCliente() {
           <h3 className="text-2xl font-black text-emerald-400 italic uppercase tracking-tighter mb-8">Elige tu horario</h3>
           
           {cot.estado === 'agendada' ? (
-             <div className="flex-1 flex flex-col items-center justify-center bg-zinc-950 rounded-2xl border border-zinc-800">
+             <div className="flex-1 flex flex-col items-center justify-center bg-zinc-950 rounded-2xl border border-zinc-800 p-8 text-center">
                <span className="text-4xl mb-2">📅</span>
                <p className="text-zinc-400 font-bold uppercase text-xs">Esta sesión ya tiene fecha</p>
              </div>
