@@ -755,7 +755,12 @@ function Calendario() {
                     return (
                       <div key={cita.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 hover:border-emerald-500/50 transition-all shadow-lg group">
                         <div className="w-full md:w-20 h-32 md:h-20 flex-shrink-0 relative overflow-hidden rounded-xl border border-zinc-800">
-                          <img src={fotoUrl} alt="Referencia" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-80 group-hover:opacity-100" />
+                          <img 
+                            src={fotoUrl} 
+                            alt="Referencia" 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-80 group-hover:opacity-100" 
+                            onError={(e) => { e.target.src = 'https://placehold.co/150x150/18181b/10b981?text=Sin+Foto' }}
+                          />
                         </div>
                         <div className="flex-1 flex flex-col justify-center overflow-hidden">
                           <div className="flex justify-between items-start mb-1">
