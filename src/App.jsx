@@ -225,7 +225,19 @@ function Formulario() {
 function Sidebar({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [menuAbierto, setMenuAbierto] = useState(false);
+  
+  // Lógica inteligente: Si la pantalla es grande (PC), inicia abierto. Si es móvil, inicia cerrado.
+  const [menuAbierto, setMenuAbierto] = useState(window.innerWidth > 768);
+
+  // Efecto para que se ajuste automáticamente si el usuario gira el celular o achica la ventana
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) setMenuAbierto(false);
+      else setMenuAbierto(true);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const menuItems = [
     { nombre: 'Mesa de Trabajo', ruta: '/admin', icono: '🖋️' },
@@ -233,15 +245,17 @@ function Sidebar({ children }) {
   ];
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-white relative">
+    <div className="flex min-h-screen bg-zinc-950 text-white relative overflow-hidden">
       
+      {/* BOTÓN HAMBURGUESA (Ahora es visible en PC y Móvil) */}
       <button 
         onClick={() => setMenuAbierto(!menuAbierto)}
-        className="md:hidden fixed top-4 left-4 z-[70] bg-zinc-900 border border-zinc-800 p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-colors"
+        className="fixed top-4 left-4 z-[70] bg-zinc-900 border border-zinc-800 p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-colors"
       >
         <span className="text-xl leading-none">{menuAbierto ? '✕' : '☰'}</span>
       </button>
 
+      {/* FONDO OSCURO (Solo en celular para que no estorbe el contenido al abrir) */}
       {menuAbierto && (
         <div 
           onClick={() => setMenuAbierto(false)}
@@ -249,12 +263,14 @@ function Sidebar({ children }) {
         ></div>
       )}
 
-      <aside className={`fixed md:sticky top-0 h-screen w-64 bg-zinc-900 border-r border-zinc-800 p-6 flex flex-col z-[60] transition-transform duration-300 ease-in-out ${
-        menuAbierto ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      {/* MENÚ LATERAL (Ocultable en todas las pantallas) */}
+      <aside className={`fixed top-0 left-0 h-screen w-64 bg-zinc-900 border-r border-zinc-800 p-6 flex flex-col z-[60] transition-transform duration-300 ease-in-out ${
+        menuAbierto ? 'translate-x-0' : '-translate-x-full'
       }`}>
         
-        <div className="flex justify-between items-center mb-10 mt-12 md:mt-0">
-          <h1 className="text-2xl font-black text-emerald-400 italic tracking-tighter uppercase">STUDIO OS</h1>
+        {/* Espacio extra arriba para que el texto no choque con el botón de la ✕ */}
+        <div className="flex justify-start items-center mb-10 mt-14">
+          <h1 className="text-2xl font-black text-emerald-400 italic tracking-tighter uppercase pl-2">STUDIO OS</h1>
         </div>
         
         <nav className="flex flex-col gap-2">
@@ -262,7 +278,8 @@ function Sidebar({ children }) {
             <Link
               key={item.ruta}
               to={item.ruta}
-              onClick={() => setMenuAbierto(false)}
+              // En celular, cerramos el menú al hacer clic en una ruta. En PC lo dejamos abierto.
+              onClick={() => { if(window.innerWidth <= 768) setMenuAbierto(false) }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
                 location.pathname === item.ruta 
                 ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
@@ -283,7 +300,11 @@ function Sidebar({ children }) {
         </button>
       </aside>
       
-      <main className="flex-grow w-full p-4 pt-20 md:p-8 h-screen overflow-y-auto overflow-x-hidden">
+      {/* CONTENEDOR PRINCIPAL */}
+      {/* En PC, si el menú está abierto, empujamos el contenido a la derecha (md:ml-64). Si está cerrado, ocupa todo. */}
+      <main className={`flex-grow w-full p-4 pt-20 md:p-8 md:pt-20 h-screen overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out ${
+        menuAbierto ? 'md:ml-64' : 'ml-0'
+      }`}>
         {children}
       </main>
     </div>
