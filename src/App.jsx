@@ -480,7 +480,6 @@ function AdminPanel() {
           {visibles.map(c => (
             <div key={c.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden hover:border-emerald-500/50 transition-all flex flex-col">
               <div className="relative h-64 cursor-zoom-in" onClick={() => setFotoFull(getImagenUrl(c.imagen_url))}>
-                {/* AQUI ESTÁ EL FIX: Le agregamos el onError a la foto de la Mesa de Trabajo */}
                 <img 
                   src={getImagenUrl(c.imagen_url)} 
                   className="w-full h-full object-cover" 
@@ -573,7 +572,6 @@ function AdminPanel() {
 
         {fotoFull && (
           <div onClick={() => setFotoFull(null)} className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 z-[100] cursor-zoom-out">
-            {/* TAMBIEN AQUI: Para cuando hacen zoom en la foto */}
             <img 
               src={fotoFull} 
               className="max-w-full max-h-[90vh] rounded-2xl object-contain" 
@@ -625,9 +623,12 @@ function Calendario() {
   const espaciosVacios = Array.from({ length: primerDiaSemana }, (_, i) => i);
   const dias = Array.from({ length: diasMes }, (_, i) => i + 1);
 
+  // FILTRO: Oculta las citas completadas
   const getCitasDelDia = (diaBuscado) => {
     return citas.filter(c => {
       if (!c.fecha_inicio) return false;
+      if (c.cotizacion?.estado === 'completada' || c.estado === 'completada') return false;
+      
       const f = new Date(c.fecha_inicio);
       return f.getFullYear() === anio && f.getMonth() === mes && f.getDate() === diaBuscado;
     });
@@ -636,6 +637,26 @@ function Calendario() {
   const cambiarMes = (direccion) => {
     setFechaBase(new Date(anio, mes + direccion, 1));
     setDiaSeleccionado(null); 
+  };
+
+  // FUNCIÓN: Completar Cita y enviar WhatsApp
+  const finalizarCita = async (citaId) => {
+    if (!window.confirm("🏁 ¿Confirmas que esta sesión de tatuaje ha finalizado? Se removerá del calendario activo y se prepararán los cuidados.")) return;
+    
+    try {
+      const res = await axios.patch(`/citas/${citaId}/completar`);
+      alert("✅ Cita marcada como completada.");
+      
+      if (res.data.telefono) {
+        const urlWsp = `https://wa.me/${res.data.telefono.replace(/\+/g,'')}?text=${encodeURIComponent(res.data.texto_cuidados)}`;
+        window.open(urlWsp, '_blank');
+      }
+      
+      cargarCitas(); 
+      setDiaSeleccionado(null); 
+    } catch (error) {
+      alert("Error al finalizar la cita.");
+    }
   };
 
   const confirmarReagendamiento = async () => {
@@ -795,19 +816,28 @@ function Calendario() {
                             "{idea}"
                           </p>
 
-                          <div className="mt-3 flex gap-2">
+                          <div className="mt-3 flex flex-col gap-2">
                             <button 
-                              onClick={(e) => { e.stopPropagation(); setModalReagendar({ abierto: true, cita: cita }); }}
-                              className="flex-1 bg-zinc-900 border border-zinc-800 hover:border-emerald-500 hover:text-emerald-400 text-zinc-500 py-2 rounded-xl font-black text-[9px] uppercase transition-colors"
+                              onClick={(e) => { e.stopPropagation(); finalizarCita(cita.id); }}
+                              className="w-full bg-emerald-500 text-black py-2.5 rounded-xl font-black text-[10px] uppercase transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:bg-emerald-400"
                             >
-                              Reprogramar
+                              ✅ Terminar Sesión y Enviar Cuidados
                             </button>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); eliminarCita(cita.id); }}
-                              className="flex-1 bg-zinc-900 border border-zinc-800 hover:border-red-500 hover:text-red-400 text-zinc-500 py-2 rounded-xl font-black text-[9px] uppercase transition-colors"
-                            >
-                              Eliminar
-                            </button>
+                            
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setModalReagendar({ abierto: true, cita: cita }); }}
+                                className="flex-1 bg-zinc-900 border border-zinc-800 hover:border-emerald-500 hover:text-emerald-400 text-zinc-500 py-2 rounded-xl font-black text-[9px] uppercase transition-colors"
+                              >
+                                Reprogramar
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); eliminarCita(cita.id); }}
+                                className="flex-1 bg-zinc-900 border border-zinc-800 hover:border-red-500 hover:text-red-400 text-zinc-500 py-2 rounded-xl font-black text-[9px] uppercase transition-colors"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -947,7 +977,6 @@ function PortalCliente() {
           <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">{cot.cliente}</h2>
           
           <div className="mt-8 relative rounded-2xl overflow-hidden border border-zinc-800 aspect-square">
-            {/* Y TAMBIÉN AQUÍ: La foto del cliente en su propio link mágico */}
             <img 
               src={getImagenUrl(cot.imagen_url)} 
               alt="Diseño" 
