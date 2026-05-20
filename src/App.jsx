@@ -30,13 +30,24 @@ const RutaProtegida = ({ children }) => {
   return children;
 };
 
-// 3. PANTALLA DE INICIO (LANDING)
+// -------------------------------------------------------------------------
+// 3. PANTALLA DE INICIO (LANDING + GALERIA + PROMOS)
+// -------------------------------------------------------------------------
 function Inicio() {
+  const [contenido, setContenido] = useState({ promociones: [], galeria: [] });
+
+  useEffect(() => {
+    // Llama a la nueva ruta pública de contenido en el backend
+    axios.get('/contenido/publico')
+      .then(res => setContenido(res.data))
+      .catch(e => console.log(e));
+  }, []);
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col relative">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col relative overflow-x-hidden">
       
       {/* HEADER DISCRETO PARA EL DUEÑO (ESQUINA SUPERIOR DERECHA) */}
-      <header className="absolute top-0 w-full p-6 flex justify-end">
+      <header className="absolute top-0 w-full p-6 flex justify-end z-20">
         <Link 
           to="/login" 
           className="text-zinc-600 text-[10px] font-black uppercase tracking-widest hover:text-emerald-400 hover:underline transition-all"
@@ -45,9 +56,9 @@ function Inicio() {
         </Link>
       </header>
 
-      {/* CONTENIDO PRINCIPAL PARA EL CLIENTE (CENTRADO) */}
-      <div className="flex-grow flex flex-col items-center justify-center p-4">
-        <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-4 text-emerald-400 uppercase drop-shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+      {/* SECCIÓN HERO (PRINCIPAL) */}
+      <div className="flex flex-col items-center justify-center pt-32 pb-20 px-4 w-full">
+        <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-4 text-emerald-400 uppercase drop-shadow-[0_0_15px_rgba(16,185,129,0.2)] text-center">
           TATTOO STUDIO
         </h1>
         <p className="text-lg text-zinc-400 mb-12 text-center max-w-sm italic">
@@ -60,6 +71,51 @@ function Inicio() {
         >
           COTIZAR AHORA
         </Link>
+      </div>
+
+      {/* SECCIÓN PROMOCIONES (Solo aparece si el tatuador tiene promos activas) */}
+      {contenido.promociones && contenido.promociones.length > 0 && (
+        <div className="px-4 py-16 bg-emerald-500/5 border-y border-emerald-500/10 w-full">
+          <h2 className="text-center text-2xl font-black mb-10 italic uppercase tracking-widest text-emerald-400">Promociones Flash</h2>
+          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+            {contenido.promociones.map(p => (
+              <div key={p.id} className="bg-zinc-900 p-6 rounded-3xl border border-emerald-500/30 flex justify-between items-center shadow-lg hover:border-emerald-500 transition-all">
+                <div className="flex-1 pr-4">
+                  <h3 className="font-black text-xl text-white uppercase tracking-tighter">{p.titulo}</h3>
+                  <p className="text-zinc-500 text-sm mt-1">{p.descripcion}</p>
+                </div>
+                <div className="text-right flex flex-col items-end justify-center">
+                  <p className="text-emerald-400 font-black text-2xl whitespace-nowrap">${Number(p.precio).toLocaleString('es-CL')}</p>
+                  <Link to="/cotizar" className="mt-2 bg-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-500 hover:text-black transition-colors">Agendar</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SECCIÓN GALERÍA (PORTAFOLIO) */}
+      <div className="px-4 py-20 max-w-6xl mx-auto w-full">
+        <h2 className="text-center text-2xl font-black mb-12 italic uppercase tracking-widest text-white">Nuestro Portafolio</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {contenido.galeria && contenido.galeria.map((foto, index) => (
+            <div key={index} className="aspect-square bg-zinc-900 rounded-2xl overflow-hidden group border border-zinc-800 relative cursor-pointer shadow-lg">
+              <img 
+                src={foto.url_imagen} 
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" 
+                alt={`Trabajo ${index + 1}`} 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+                <span className="text-emerald-400 font-black text-[10px] uppercase tracking-widest">Ver Estilo</span>
+              </div>
+            </div>
+          ))}
+          {(!contenido.galeria || contenido.galeria.length === 0) && (
+            <div className="col-span-full text-center py-20 border border-dashed border-zinc-800 rounded-3xl">
+              <p className="text-zinc-600 text-xs font-black uppercase tracking-widest">El estudio pronto subirá sus trabajos...</p>
+            </div>
+          )}
+        </div>
       </div>
       
     </div>
@@ -242,6 +298,7 @@ function Sidebar({ children }) {
   const menuItems = [
     { nombre: 'Mesa de Trabajo', ruta: '/admin', icono: '🖋️' },
     { nombre: 'Mi Agenda', ruta: '/calendario', icono: '📅' },
+    { nombre: 'Portafolio & Promos', ruta: '/gestor', icono: '🎨' }, // <--- ESTE ES EL NUEVO
   ];
 
   return (
@@ -1059,6 +1116,159 @@ function PortalCliente() {
   );
 }
 
+// -------------------------------------------------------------------------
+// PANEL DE GESTOR DE CONTENIDO (PROMOS Y GALERÍA)
+// -------------------------------------------------------------------------
+function GestorContenido() {
+  const [datos, setDatos] = useState({ promociones: [], galeria: [] });
+  const [cargando, setCargando] = useState(true);
+  
+  // Estados para formularios
+  const [nuevaPromo, setNuevaPromo] = useState({ titulo: '', descripcion: '', precio: '' });
+  const [nuevaFoto, setNuevaFoto] = useState(null);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+
+  const cargarDatos = async () => {
+    try {
+      const res = await axios.get('/contenido/admin-info');
+      setDatos(res.data);
+    } catch (error) {
+      console.error("Error al cargar contenido", error);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => { cargarDatos(); }, []);
+
+  const crearPromocion = async (e) => {
+    e.preventDefault();
+    const fd = new FormData();
+    fd.append('titulo', nuevaPromo.titulo);
+    fd.append('descripcion', nuevaPromo.descripcion);
+    fd.append('precio', nuevaPromo.precio);
+    try {
+      await axios.post('/contenido/promociones', fd);
+      alert("Promoción creada con éxito");
+      setNuevaPromo({ titulo: '', descripcion: '', precio: '' });
+      cargarDatos();
+    } catch (error) {
+      alert("Error al crear promoción");
+    }
+  };
+
+  const togglePromocion = async (id) => {
+    try {
+      await axios.patch(`/contenido/promociones/${id}/toggle`);
+      cargarDatos();
+    } catch (error) {
+      alert("Error al cambiar estado");
+    }
+  };
+
+  const subirFotoGaleria = async (e) => {
+    e.preventDefault();
+    if (!nuevaFoto) return alert("Selecciona una foto");
+    setSubiendoFoto(true);
+    const fd = new FormData();
+    fd.append('imagen', nuevaFoto);
+    try {
+      await axios.post('/contenido/galeria', fd);
+      alert("Foto agregada al portafolio");
+      setNuevaFoto(null);
+      cargarDatos();
+    } catch (error) {
+      alert("Error al subir foto");
+    } finally {
+      setSubiendoFoto(false);
+    }
+  };
+
+  if (cargando) return <div className="p-8 text-emerald-400 font-black animate-pulse">CARGANDO GESTOR...</div>;
+
+  return (
+    <div className="p-4 md:p-8 max-w-6xl mx-auto text-white">
+      <header className="mb-10">
+        <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">PORTAFOLIO & <span className="text-emerald-400">PROMOS</span></h2>
+        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Personaliza tu página principal</p>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        {/* COLUMNA PROMOCIONES */}
+        <div className="space-y-6">
+          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl">
+            <h3 className="font-black text-xl text-emerald-400 mb-4 uppercase">Nueva Promoción</h3>
+            <form onSubmit={crearPromocion} className="space-y-3">
+              <input required placeholder="Título (Ej: Flash Day 2x1)" value={nuevaPromo.titulo} onChange={e => setNuevaPromo({...nuevaPromo, titulo: e.target.value})} className="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none focus:border-emerald-500 text-sm" />
+              <textarea required placeholder="Descripción breve..." value={nuevaPromo.descripcion} onChange={e => setNuevaPromo({...nuevaPromo, descripcion: e.target.value})} className="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none focus:border-emerald-500 text-sm h-20" />
+              <input required placeholder="Precio Fijo ($)" type="number" value={nuevaPromo.precio} onChange={e => setNuevaPromo({...nuevaPromo, precio: e.target.value})} className="w-full bg-black border border-zinc-800 p-3 rounded-xl outline-none focus:border-emerald-500 text-sm" />
+              <button type="submit" className="w-full bg-emerald-500 text-black py-3 rounded-xl font-black text-xs uppercase hover:bg-emerald-400">Lanzar Promoción</button>
+            </form>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl">
+            <h3 className="font-black text-xl text-white mb-4 uppercase">Promociones Actuales</h3>
+            <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+              {datos.promociones.map(p => (
+                <div key={p.id} className={`p-4 rounded-2xl border ${p.activa ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-zinc-800 bg-black'}`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-black uppercase text-sm">{p.titulo}</h4>
+                      <p className="text-emerald-400 font-bold text-xs">${Number(p.precio).toLocaleString('es-CL')}</p>
+                    </div>
+                    <button 
+                      onClick={() => togglePromocion(p.id)} 
+                      className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${p.activa ? 'bg-red-500/20 text-red-400 hover:bg-red-500/40' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/40'}`}
+                    >
+                      {p.activa ? 'APAGAR' : 'PRENDER'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {datos.promociones.length === 0 && <p className="text-zinc-600 text-xs font-bold text-center py-4">No hay promociones creadas</p>}
+            </div>
+          </div>
+        </div>
+
+        {/* COLUMNA GALERÍA */}
+        <div className="space-y-6">
+          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl">
+            <h3 className="font-black text-xl text-emerald-400 mb-4 uppercase">Subir al Portafolio</h3>
+            <form onSubmit={subirFotoGaleria} className="space-y-4">
+              <div className="relative">
+                <input required type="file" id="foto_galeria" accept="image/*" onChange={(e) => setNuevaFoto(e.target.files[0])} className="hidden" />
+                <label htmlFor="foto_galeria" className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all ${nuevaFoto ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-black hover:border-emerald-500/50'}`}>
+                  <span className="text-2xl mb-2">{nuevaFoto ? '✅' : '📸'}</span>
+                  <p className="text-xs font-bold text-zinc-400 truncate w-full max-w-[200px] text-center">
+                    {nuevaFoto ? nuevaFoto.name : "Seleccionar foto del tatuaje"}
+                  </p>
+                </label>
+              </div>
+              <button type="submit" disabled={subiendoFoto} className="w-full bg-emerald-500 text-black py-3 rounded-xl font-black text-xs uppercase hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed">
+                {subiendoFoto ? 'SUBIENDO A LA NUBE...' : 'AGREGAR A LA GALERÍA'}
+              </button>
+            </form>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl">
+            <h3 className="font-black text-xl text-white mb-4 uppercase">Tu Galería</h3>
+            <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+              {datos.galeria.map(g => (
+                <div key={g.id} className="aspect-square bg-black rounded-xl overflow-hidden border border-zinc-800 relative group">
+                  <img src={getImagenUrl(g.url_imagen)} alt="Galería" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all" />
+                </div>
+              ))}
+              {datos.galeria.length === 0 && <p className="col-span-3 text-zinc-600 text-xs font-bold text-center py-4">La galería está vacía</p>}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // 7. RUTAS PRINCIPALES Y EXPORT POR DEFECTO
 export default function App() {
   return (
@@ -1070,6 +1280,8 @@ export default function App() {
         <Route path="/reserva/:id" element={<PortalCliente />} />
         <Route path="/admin" element={<RutaProtegida><Sidebar><AdminPanel /></Sidebar></RutaProtegida>} />
         <Route path="/calendario" element={<RutaProtegida><Sidebar><Calendario /></Sidebar></RutaProtegida>} />
+        {/* --- ESTA ES LA NUEVA RUTA --- */}
+        <Route path="/gestor" element={<RutaProtegida><Sidebar><GestorContenido /></Sidebar></RutaProtegida>} />
       </Routes>
     </BrowserRouter>
   )
