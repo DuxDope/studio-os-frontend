@@ -60,7 +60,7 @@ function Inicio() {
           to="/login" 
           className="text-zinc-600 text-[10px] font-black uppercase tracking-widest hover:text-emerald-400 transition-all"
         >
-          Studio Login
+          Iniciar Sesión
         </Link>
       </header>
 
