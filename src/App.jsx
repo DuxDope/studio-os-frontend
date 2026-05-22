@@ -31,13 +31,13 @@ const RutaProtegida = ({ children }) => {
 };
 
 // -------------------------------------------------------------------------
-// 3. PANTALLA DE INICIO (LANDING + GALERIA + PROMOS)
+// 3. PANTALLA DE INICIO OPTIMIZADA PARA TELÉFONOS (HUB CON BOTONES/VISTAS)
 // -------------------------------------------------------------------------
 function Inicio() {
   const [contenido, setContenido] = useState({ promociones: [], galeria: [] });
+  const [vista, setVista] = useState('inicio'); // Vistas posibles: 'inicio', 'promos', 'galeria'
 
   useEffect(() => {
-    // Llama a la nueva ruta pública de contenido en el backend
     axios.get('/contenido/publico')
       .then(res => setContenido(res.data))
       .catch(e => console.log(e));
@@ -46,47 +46,78 @@ function Inicio() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col relative overflow-x-hidden">
       
-      {/* HEADER DISCRETO PARA EL DUEÑO (ESQUINA SUPERIOR DERECHA) */}
-      <header className="absolute top-0 w-full p-6 flex justify-end z-20">
+      {/* HEADER DE NAVEGACIÓN INTELIGENTE */}
+      <header className="absolute top-0 w-full p-6 flex justify-between items-center z-20">
+        {vista !== 'inicio' ? (
+          <button 
+            onClick={() => setVista('inicio')} 
+            className="bg-zinc-900 border border-zinc-800 text-emerald-400 font-black text-[10px] uppercase px-4 py-2 rounded-xl hover:bg-zinc-800 transition-all shadow-md"
+          >
+            ← Volver al Inicio
+          </button>
+        ) : <div />}
         <Link 
           to="/login" 
-          className="text-zinc-600 text-[10px] font-black uppercase tracking-widest hover:text-emerald-400 hover:underline transition-all"
+          className="text-zinc-600 text-[10px] font-black uppercase tracking-widest hover:text-emerald-400 transition-all"
         >
-          Iniciar Sesión
+          Studio Login
         </Link>
       </header>
 
-      {/* SECCIÓN HERO (PRINCIPAL) */}
-      <div className="flex flex-col items-center justify-center pt-32 pb-20 px-4 w-full">
-        <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-4 text-emerald-400 uppercase drop-shadow-[0_0_15px_rgba(16,185,129,0.2)] text-center">
-          TATTOO STUDIO
-        </h1>
-        <p className="text-lg text-zinc-400 mb-12 text-center max-w-sm italic">
-          Convierte tu idea en arte. Agenda tu sesión hoy.
-        </p>
-        
-        <Link 
-          to="/cotizar" 
-          className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black py-4 px-12 rounded-full transition-all hover:scale-105 uppercase text-sm shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-        >
-          COTIZAR AHORA
-        </Link>
-      </div>
+      {/* VISTA 1: MENÚ PRINCIPAL (PANTALLA LIMPIA SIN SCROLL) */}
+      {vista === 'inicio' && (
+        <div className="flex-grow flex flex-col items-center justify-center p-4 w-full max-w-sm mx-auto animate-in fade-in duration-300">
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-2 text-emerald-400 uppercase drop-shadow-[0_0_15px_rgba(16,185,129,0.2)] text-center italic">
+            TATTOO STUDIO
+          </h1>
+          <p className="text-xs text-zinc-500 mb-12 text-center max-w-xs italic tracking-wide">
+            Convierte tu idea en arte. Elige una opción abajo.
+          </p>
+          
+          {/* PANEL DE ACCIONES DIRECTAS EN MÓVIL */}
+          <div className="flex flex-col gap-3 w-full">
+            <Link 
+              to="/cotizar" 
+              className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black py-4 rounded-2xl transition-all uppercase text-xs text-center tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+            >
+              🔥 COTIZAR IDEA NUEVA
+            </Link>
 
-      {/* SECCIÓN PROMOCIONES (Solo aparece si el tatuador tiene promos activas) */}
-      {contenido.promociones && contenido.promociones.length > 0 && (
-        <div className="px-4 py-16 bg-emerald-500/5 border-y border-emerald-500/10 w-full">
-          <h2 className="text-center text-2xl font-black mb-10 italic uppercase tracking-widest text-emerald-400">Promociones Flash</h2>
-          <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button 
+              onClick={() => setVista('galeria')}
+              className="w-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-white font-black py-4 rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2 shadow-lg"
+            >
+              📸 VER PORTAFOLIO ({contenido.galeria?.length || 0})
+            </button>
+
+            {contenido.promociones && contenido.promociones.length > 0 && (
+              <button 
+                onClick={() => setVista('promos')}
+                className="w-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black py-4 rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2 shadow-lg animate-pulse"
+              >
+                ⚡ PROMOS FLASH ACTIVAS ({contenido.promociones.length})
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* VISTA 2: LISTA DE PROMOCIONES */}
+      {vista === 'promos' && (
+        <div className="flex-grow px-4 pt-28 pb-16 max-w-xl mx-auto w-full animate-in slide-in-from-bottom duration-300">
+          <h2 className="text-center text-3xl font-black mb-1 italic uppercase tracking-tighter text-emerald-400">Promociones Flash</h2>
+          <p className="text-center text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-10">Diseños listos para tatuar a precio cerrado</p>
+          
+          <div className="flex flex-col gap-4">
             {contenido.promociones.map(p => (
-              <div key={p.id} className="bg-zinc-900 p-6 rounded-3xl border border-emerald-500/30 flex justify-between items-center shadow-lg hover:border-emerald-500 transition-all">
+              <div key={p.id} className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 flex justify-between items-center shadow-md">
                 <div className="flex-1 pr-4">
-                  <h3 className="font-black text-xl text-white uppercase tracking-tighter">{p.titulo}</h3>
-                  <p className="text-zinc-500 text-sm mt-1">{p.descripcion}</p>
+                  <h3 className="font-black text-base text-white uppercase tracking-tight">{p.titulo}</h3>
+                  <p className="text-zinc-400 text-xs mt-1 leading-relaxed">{p.descripcion}</p>
                 </div>
                 <div className="text-right flex flex-col items-end justify-center">
-                  <p className="text-emerald-400 font-black text-2xl whitespace-nowrap">${Number(p.precio).toLocaleString('es-CL')}</p>
-                  <Link to="/cotizar" className="mt-2 bg-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-500 hover:text-black transition-colors">Agendar</Link>
+                  <p className="text-emerald-400 font-black text-xl whitespace-nowrap">${Number(p.precio).toLocaleString('es-CL')}</p>
+                  <Link to="/cotizar" className="mt-2 bg-emerald-500 text-black px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider shadow-inner">Agendar</Link>
                 </div>
               </div>
             ))}
@@ -94,29 +125,29 @@ function Inicio() {
         </div>
       )}
 
-      {/* SECCIÓN GALERÍA (PORTAFOLIO) */}
-      <div className="px-4 py-20 max-w-6xl mx-auto w-full">
-        <h2 className="text-center text-2xl font-black mb-12 italic uppercase tracking-widest text-white">Nuestro Portafolio</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {contenido.galeria && contenido.galeria.map((foto, index) => (
-            <div key={index} className="aspect-square bg-zinc-900 rounded-2xl overflow-hidden group border border-zinc-800 relative cursor-pointer shadow-lg">
-              <img 
-                src={foto.url_imagen} 
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" 
-                alt={`Trabajo ${index + 1}`} 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
-                <span className="text-emerald-400 font-black text-[10px] uppercase tracking-widest">Ver Estilo</span>
+      {/* VISTA 3: GALERÍA DE ARTE */}
+      {vista === 'galeria' && (
+        <div className="flex-grow px-4 pt-28 pb-16 max-w-4xl mx-auto w-full animate-in slide-in-from-bottom duration-300">
+          <h2 className="text-center text-3xl font-black mb-1 italic uppercase tracking-tighter text-white">Nuestro Portafolio</h2>
+          <p className="text-center text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-10">Galería oficial del estudio</p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {contenido.galeria && contenido.galeria.map((foto, index) => (
+              <div key={index} className="aspect-square bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 shadow-md">
+                <img 
+                  src={foto.url_imagen} 
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                  alt={`Trabajo ${index + 1}`} 
+                />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          
           {(!contenido.galeria || contenido.galeria.length === 0) && (
-            <div className="col-span-full text-center py-20 border border-dashed border-zinc-800 rounded-3xl">
-              <p className="text-zinc-600 text-xs font-black uppercase tracking-widest">El estudio pronto subirá sus trabajos...</p>
-            </div>
+            <p className="text-center text-zinc-600 text-xs font-black uppercase tracking-widest py-20">No hay fotos subidas todavía</p>
           )}
         </div>
-      </div>
+      )}
       
     </div>
   )
@@ -298,7 +329,7 @@ function Sidebar({ children }) {
   const menuItems = [
     { nombre: 'Mesa de Trabajo', ruta: '/admin', icono: '🖋️' },
     { nombre: 'Mi Agenda', ruta: '/calendario', icono: '📅' },
-    { nombre: 'Portafolio & Promos', ruta: '/gestor', icono: '🎨' }, // <--- ESTE ES EL NUEVO
+    { nombre: 'Portafolio & Promos', ruta: '/gestor', icono: '🎨' },
   ];
 
   return (
