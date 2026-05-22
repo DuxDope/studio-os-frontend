@@ -179,7 +179,7 @@ function Login() {
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
       <form onSubmit={handleLogin} className="bg-zinc-900 p-8 rounded-3xl border border-zinc-800 w-full max-w-sm space-y-6 shadow-2xl">
-        <h2 className="text-3xl font-black text-emerald-400 italic">STUDIO LOGIN</h2>
+        <h2 className="text-3xl font-black text-emerald-400 italic">Iniciar Sesión</h2>
         {error && <p className="text-red-400 text-xs font-bold uppercase">{error}</p>}
         <input required type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500" />
         <input required type="password" placeholder="Clave" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-emerald-500" />
