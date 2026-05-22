@@ -446,7 +446,7 @@ function AdminPanel() {
     try {
       await axios.patch(`/cotizaciones/${modal.cot.id}/responder`, fd);
       
-      const linkReserva = `https://studio-os-frontend-iota.vercel.app/reserva/${modal.cot.id}`;
+      const linkReserva = `${window.location.origin}/reserva/${modal.cot.id}`;
       const textoPresupuesto = `¡Hola ${modal.cot.cliente}! Revisé tu idea para el tatuaje. El valor estimado es de $${respuesta.precio} y nos tomaría unas ${respuesta.horas} horas de sesión. ${respuesta.notas ? '\nNotas técnicas: ' + respuesta.notas : ''}\n\nPara confirmar tu diseño y elegir tu hora, entra a tu link personal:\n${linkReserva}`;
       
       if (metodo === 'whatsapp') {
@@ -604,24 +604,36 @@ function AdminPanel() {
         {modal.abierto && (
           <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md space-y-4 border border-emerald-500/30 shadow-2xl text-white">
-              <div className="flex justify-between items-start">
-                <h3 className="text-xl font-black text-emerald-400 italic uppercase">Presupuestar</h3>
-                <button onClick={() => setModal({ abierto: false, cot: null })} className="text-zinc-600 hover:text-white">✕</button>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-2xl font-black text-emerald-400 italic uppercase tracking-tighter">Presupuestar</h3>
+                <button onClick={() => setModal({ abierto: false, cot: null })} className="text-zinc-600 hover:text-white font-black">✕</button>
               </div>
-              <div className="bg-black/50 p-4 rounded-xl text-[10px] space-y-1">
-                <p><span className="text-zinc-500 font-black">CLIENTE:</span> {modal.cot?.cliente}</p>
-                <p className="text-emerald-400 font-bold border-t border-zinc-800 pt-2 mt-2">
-                  <span className="text-zinc-500 font-black">NOTAS:</span> {modal.cot?.notas_medicas || 'Sin notas'}
-                </p>
+
+              <div className="bg-black/50 p-5 rounded-2xl text-xs space-y-3 border border-zinc-800">
+                <p><span className="text-zinc-500 font-black tracking-widest uppercase text-[10px]">CLIENTE:</span> <br/>
+                <span className="font-bold text-sm text-white">{modal.cot?.cliente}</span></p>
+
+                <p><span className="text-zinc-500 font-black tracking-widest uppercase text-[10px]">ZONA Y TAMAÑO:</span> <br/>
+                <span className="font-bold text-emerald-400">{modal.cot?.zona_cuerpo} • {modal.cot?.tamano_cm}</span></p>
+
+                <p><span className="text-zinc-500 font-black tracking-widest uppercase text-[10px]">IDEA DEL TATUAJE:</span> <br/>
+                <span className="italic text-zinc-300">"{modal.cot?.idea}"</span></p>
+
+                <div className="border-t border-zinc-800/50 pt-2 mt-2">
+                  <p className="text-emerald-400 font-bold"><span className="text-zinc-500 font-black tracking-widest uppercase text-[10px]">CONTACTO / NOTAS:</span> <br/>
+                  {modal.cot?.notas_medicas || 'Sin notas'}</p>
+                </div>
               </div>
-              <div className="space-y-3">
-                <input placeholder="Precio ($)" type="number" onChange={e => setRespuesta({...respuesta, precio: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 text-sm" />
-                <input placeholder="Horas" type="number" onChange={e => setRespuesta({...respuesta, horas: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 text-sm" />
-                <textarea placeholder="Notas técnicas..." onChange={e => setRespuesta({...respuesta, notas: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-xl h-20 outline-none focus:border-emerald-500 text-sm" />
+
+              <div className="space-y-3 pt-2">
+                <input placeholder="Precio Fijo ($)" type="number" onChange={e => setRespuesta({...respuesta, precio: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm" />
+                <input placeholder="Horas de sesión (Ej: 3)" type="number" onChange={e => setRespuesta({...respuesta, horas: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm" />
+                <textarea placeholder="Notas técnicas para el cliente..." onChange={e => setRespuesta({...respuesta, notas: e.target.value})} className="w-full bg-black border border-zinc-800 p-4 rounded-xl h-20 outline-none focus:border-emerald-500 transition-all text-sm resize-none" />
               </div>
+
               <div className="flex gap-2 pt-2">
-                <button onClick={() => enviarRespuesta('whatsapp')} className="flex-1 bg-green-500/10 text-green-400 py-3 rounded-xl font-black text-[10px] uppercase border border-green-500/20">WSP & LINK</button>
-                <button onClick={() => enviarRespuesta('instagram')} className="flex-1 bg-pink-500/10 text-pink-400 py-3 rounded-xl font-black text-[10px] uppercase border border-pink-500/20">IG & LINK</button>
+                <button onClick={() => enviarRespuesta('whatsapp')} className="flex-1 bg-green-500/10 hover:bg-green-500/20 transition-all text-green-400 py-4 rounded-xl font-black text-[10px] uppercase border border-green-500/20 tracking-widest">WSP & Link</button>
+                <button onClick={() => enviarRespuesta('instagram')} className="flex-1 bg-pink-500/10 hover:bg-pink-500/20 transition-all text-pink-400 py-4 rounded-xl font-black text-[10px] uppercase border border-pink-500/20 tracking-widest">IG & Link</button>
               </div>
             </div>
           </div>
@@ -645,7 +657,7 @@ function AdminPanel() {
                     type="datetime-local" 
                     min={getFechaMinima()}
                     onClick={(e) => e.target.showPicker()}
-                    className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-blue-500 transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-blue-500 transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
                     onChange={(e) => setNuevaCita({ fecha: e.target.value })}
                   />
                 </div>
@@ -1311,7 +1323,6 @@ export default function App() {
         <Route path="/reserva/:id" element={<PortalCliente />} />
         <Route path="/admin" element={<RutaProtegida><Sidebar><AdminPanel /></Sidebar></RutaProtegida>} />
         <Route path="/calendario" element={<RutaProtegida><Sidebar><Calendario /></Sidebar></RutaProtegida>} />
-        {/* --- ESTA ES LA NUEVA RUTA --- */}
         <Route path="/gestor" element={<RutaProtegida><Sidebar><GestorContenido /></Sidebar></RutaProtegida>} />
       </Routes>
     </BrowserRouter>
