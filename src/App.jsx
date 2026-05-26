@@ -602,7 +602,7 @@ function AdminPanel() {
         </div>
 
         {modal.abierto && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-50">
             <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md space-y-4 border border-emerald-500/30 shadow-2xl text-white">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-2xl font-black text-emerald-400 italic uppercase tracking-tighter">Presupuestar</h3>
@@ -657,7 +657,7 @@ function AdminPanel() {
                     type="datetime-local" 
                     min={getFechaMinima()}
                     onClick={(e) => e.target.showPicker()}
-                    className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-blue-500 transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:invert"
+                    className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-blue-500 transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     onChange={(e) => setNuevaCita({ fecha: e.target.value })}
                   />
                 </div>
@@ -689,7 +689,7 @@ function Calendario() {
   const [citas, setCitas] = useState([]);
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
   const [fechaBase, setFechaBase] = useState(new Date()); 
-  
+  const [mostrarHistorial, setMostrarHistorial] = useState(false);
   const [modalReagendar, setModalReagendar] = useState({ abierto: false, cita: null });
   const [nuevaFecha, setNuevaFecha] = useState('');
   
@@ -723,7 +723,6 @@ function Calendario() {
   const espaciosVacios = Array.from({ length: primerDiaSemana }, (_, i) => i);
   const dias = Array.from({ length: diasMes }, (_, i) => i + 1);
 
-  // FILTRO: Oculta las citas completadas
   const getCitasDelDia = (diaBuscado) => {
     return citas.filter(c => {
       if (!c.fecha_inicio) return false;
@@ -739,23 +738,27 @@ function Calendario() {
     setDiaSeleccionado(null); 
   };
 
-  // FUNCIÓN: Completar Cita y enviar WhatsApp
   const finalizarCita = async (citaId) => {
-    if (!window.confirm("🏁 ¿Confirmas que esta sesión de tatuaje ha finalizado? Se removerá del calendario activo y se prepararán los cuidados.")) return;
+    if (!window.confirm("🏁 ¿Confirmas que esta sesión de tatuaje ha finalizado? Se moverá al historial y se prepararán los cuidados.")) return;
     
     try {
       const res = await axios.patch(`/citas/${citaId}/completar`);
-      alert("✅ Cita marcada como completada.");
+      alert("✅ Cita marcada como completada y movida al historial.");
       
       if (res.data.telefono) {
         const urlWsp = `https://wa.me/${res.data.telefono.replace(/\+/g,'')}?text=${encodeURIComponent(res.data.texto_cuidados)}`;
-        window.open(urlWsp, '_blank');
+        const nuevaVentana = window.open(urlWsp, '_blank');
+        if (!nuevaVentana) {
+          navigator.clipboard.writeText(res.data.texto_cuidados);
+          alert("⚠️ Tu navegador bloqueó la pestaña de WhatsApp, pero copiamos los cuidados al portapapeles. ¡Pégalos en el chat con el cliente!");
+        }
       }
       
       cargarCitas(); 
       setDiaSeleccionado(null); 
     } catch (error) {
-      alert("Error al finalizar la cita.");
+      console.error(error);
+      alert("Error al finalizar la cita. Revisa la consola.");
     }
   };
 
@@ -800,154 +803,180 @@ function Calendario() {
       <div className="max-w-7xl mx-auto">
         
         <header className="flex flex-col md:flex-row justify-between items-center mb-10 border-b border-zinc-800 pb-6 gap-4">
-          <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-6">
-            <button onClick={() => cambiarMes(-1)} className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center font-black text-zinc-500 hover:text-emerald-400 hover:border-emerald-500 transition-all shadow-lg text-lg md:text-xl">
-              {"<"}
-            </button>
-            <h2 className="text-2xl md:text-4xl font-black italic text-emerald-400 uppercase tracking-tighter min-w-[200px] md:min-w-[320px] text-center">
-              {fechaBase.toLocaleString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase()}
-            </h2>
-            <button onClick={() => cambiarMes(1)} className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center font-black text-zinc-500 hover:text-emerald-400 hover:border-emerald-500 transition-all shadow-lg text-lg md:text-xl">
-              {">"}
-            </button>
+          <div className="flex gap-4 w-full md:w-auto overflow-x-auto scrollbar-hide">
+            <button onClick={() => setMostrarHistorial(false)} className={`px-6 py-3 rounded-xl font-black text-xs uppercase whitespace-nowrap transition-all shadow-md ${!mostrarHistorial ? 'bg-emerald-500 text-black' : 'bg-zinc-900 text-zinc-500 hover:text-white'}`}>📅 Calendario Activo</button>
+            <button onClick={() => setMostrarHistorial(true)} className={`px-6 py-3 rounded-xl font-black text-xs uppercase whitespace-nowrap transition-all shadow-md ${mostrarHistorial ? 'bg-emerald-500 text-black' : 'bg-zinc-900 text-zinc-500 hover:text-white'}`}>📁 Historial (Completados)</button>
           </div>
-          <Link to="/admin" className="bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl text-[10px] font-black hover:text-emerald-400 transition-all uppercase w-full md:w-auto text-center">
+          
+          {!mostrarHistorial && (
+            <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-6">
+              <button onClick={() => cambiarMes(-1)} className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center font-black text-zinc-500 hover:text-emerald-400 hover:border-emerald-500 transition-all shadow-lg text-lg md:text-xl">{"<"}</button>
+              <h2 className="text-2xl md:text-4xl font-black italic text-emerald-400 uppercase tracking-tighter min-w-[200px] md:min-w-[320px] text-center">
+                {fechaBase.toLocaleString('es-CL', { month: 'long', year: 'numeric' }).toUpperCase()}
+              </h2>
+              <button onClick={() => cambiarMes(1)} className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center font-black text-zinc-500 hover:text-emerald-400 hover:border-emerald-500 transition-all shadow-lg text-lg md:text-xl">{">"}</button>
+            </div>
+          )}
+
+          <Link to="/admin" className="bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-xl text-[10px] font-black hover:text-emerald-400 transition-all uppercase w-full md:w-auto text-center">
             VOLVER A MESA
           </Link>
         </header>
 
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className={`grid grid-cols-7 gap-1 md:gap-4 transition-all duration-500 ${diaSeleccionado ? 'w-full md:w-2/3' : 'w-full'}`}>
-            {['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'].map(d => (
-              <div key={d} className="text-center text-[10px] md:text-xs font-black text-zinc-600 mb-1 md:mb-2 uppercase tracking-widest">
-                {d}
-              </div>
-            ))}
-            
-            {espaciosVacios.map(e => (
-              <div key={`v-${e}`} className="min-h-[60px] md:min-h-[100px] opacity-10"></div>
-            ))}
-            
-            {dias.map(dia => {
-              const citasHoy = getCitasDelDia(dia);
-              const esHoy = diaSeleccionado === dia;
-
-              return (
-                <div 
-                  key={dia} 
-                  onClick={() => setDiaSeleccionado(dia)}
-                  className={`cursor-pointer min-h-[60px] md:min-h-[100px] p-1 md:p-3 rounded-xl md:rounded-2xl border transition-all flex flex-col ${
-                    esHoy ? 'bg-emerald-500/10 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'
-                  }`}
-                >
-                  <span className={`text-[10px] md:text-xs font-black ${esHoy ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                    {dia}
-                  </span>
-                  <div className="mt-auto flex justify-center flex-wrap gap-1">
-                    {citasHoy.map((_, i) => (
-                      <div key={i} className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"></div>
-                    ))}
-                  </div>
+        {mostrarHistorial ? (
+          <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl animate-in fade-in duration-300">
+            <h3 className="text-xl font-black mb-6 uppercase text-emerald-400 italic">Trabajos Realizados</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {citas.filter(c => c.estado === 'completada').sort((a,b) => new Date(b.fecha_inicio) - new Date(a.fecha_inicio)).map(c => (
+                <div key={c.id} className="bg-black border border-zinc-800 p-4 rounded-2xl flex justify-between items-center shadow-md">
+                   <div>
+                     <p className="font-black text-white text-lg uppercase tracking-tight">{c.cotizacion?.cliente || 'Cliente'}</p>
+                     <p className="text-xs text-zinc-500 mt-1">{new Date(c.fecha_inicio).toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                   </div>
+                   <span className="text-[10px] text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 rounded-lg uppercase font-black tracking-widest whitespace-nowrap">✓ Completado</span>
                 </div>
-              );
-            })}
+              ))}
+              {citas.filter(c => c.estado === 'completada').length === 0 && (
+                <div className="col-span-1 md:col-span-2 text-center py-20 border border-dashed border-zinc-800 rounded-2xl text-zinc-500 text-xs font-black uppercase">
+                  Aún no hay trabajos en el historial
+                </div>
+              )}
+            </div>
           </div>
-
-          {diaSeleccionado && (
-            <div className="w-full md:w-1/3 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 animate-in slide-in-from-right md:slide-in-from-right-8 duration-300 flex flex-col h-fit md:sticky md:top-8 mt-6 md:mt-0">
-              <div className="flex justify-between items-start mb-6 border-b border-zinc-800 pb-4">
-                <div>
-                  <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">DÍA {diaSeleccionado}</h3>
-                  <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Citas Programadas</p>
+        ) : (
+          <div className="flex flex-col md:flex-row gap-8">
+            <div className={`grid grid-cols-7 gap-1 md:gap-4 transition-all duration-500 ${diaSeleccionado ? 'w-full md:w-2/3' : 'w-full'}`}>
+              {['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'].map(d => (
+                <div key={d} className="text-center text-[10px] md:text-xs font-black text-zinc-600 mb-1 md:mb-2 uppercase tracking-widest">
+                  {d}
                 </div>
-                <button 
-                  onClick={() => setDiaSeleccionado(null)} 
-                  className="bg-zinc-800 hover:bg-zinc-700 hover:text-white text-zinc-400 w-8 h-8 rounded-full flex items-center justify-center transition-colors font-black"
-                >
-                  ✕
-                </button>
-              </div>
+              ))}
+              
+              {espaciosVacios.map(e => (
+                <div key={`v-${e}`} className="min-h-[60px] md:min-h-[100px] opacity-10"></div>
+              ))}
+              
+              {dias.map(dia => {
+                const citasHoy = getCitasDelDia(dia);
+                const esHoy = diaSeleccionado === dia;
 
-              <div className="flex flex-col gap-4 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
-                {(() => {
-                  const citasDelDia = getCitasDelDia(diaSeleccionado);
+                return (
+                  <div 
+                    key={dia} 
+                    onClick={() => setDiaSeleccionado(dia)}
+                    className={`cursor-pointer min-h-[60px] md:min-h-[100px] p-1 md:p-3 rounded-xl md:rounded-2xl border transition-all flex flex-col ${
+                      esHoy ? 'bg-emerald-500/10 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'
+                    }`}
+                  >
+                    <span className={`text-[10px] md:text-xs font-black ${esHoy ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                      {dia}
+                    </span>
+                    <div className="mt-auto flex justify-center flex-wrap gap-1">
+                      {citasHoy.map((_, i) => (
+                        <div key={i} className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"></div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-                  if (citasDelDia.length === 0) {
-                    return (
-                      <div className="text-center py-10 border border-dashed border-zinc-800 rounded-2xl">
-                        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">No hay citas en esta fecha</p>
-                      </div>
-                    );
-                  }
+            {diaSeleccionado && (
+              <div className="w-full md:w-1/3 bg-zinc-900 border border-zinc-800 rounded-3xl p-6 animate-in slide-in-from-right md:slide-in-from-right-8 duration-300 flex flex-col h-fit md:sticky md:top-8 mt-6 md:mt-0">
+                <div className="flex justify-between items-start mb-6 border-b border-zinc-800 pb-4">
+                  <div>
+                    <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">DÍA {diaSeleccionado}</h3>
+                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Citas Programadas</p>
+                  </div>
+                  <button 
+                    onClick={() => setDiaSeleccionado(null)} 
+                    className="bg-zinc-800 hover:bg-zinc-700 hover:text-white text-zinc-400 w-8 h-8 rounded-full flex items-center justify-center transition-colors font-black"
+                  >
+                    ✕
+                  </button>
+                </div>
 
-                  return citasDelDia.map((cita) => {
-                    const fechaObj = new Date(cita.fecha_inicio);
-                    const horaFormateada = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: true });
+                <div className="flex flex-col gap-4 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
+                  {(() => {
+                    const citasDelDia = getCitasDelDia(diaSeleccionado);
 
-                    const cliente = cita.cliente || cita.cotizacion?.cliente || 'Cliente Anónimo';
-                    const zona = cita.zona_cuerpo || cita.cotizacion?.zona_cuerpo || 'ZONA N/A';
-                    const tamano = cita.tamano_cm || cita.cotizacion?.tamano_cm || 'TAMAÑO N/A';
-                    const idea = cita.idea || cita.cotizacion?.descripcion_idea || cita.cotizacion?.idea || 'Sin descripción técnica';
-                    const fotoUrl = getImagenUrl(cita.imagen_url || cita.cotizacion?.imagen_url);
-
-                    return (
-                      <div key={cita.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 hover:border-emerald-500/50 transition-all shadow-lg group">
-                        <div className="w-full md:w-20 h-32 md:h-20 flex-shrink-0 relative overflow-hidden rounded-xl border border-zinc-800">
-                          <img 
-                            src={fotoUrl} 
-                            alt="Referencia" 
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-80 group-hover:opacity-100" 
-                            onError={(e) => { e.target.src = 'https://placehold.co/150x150/18181b/10b981?text=Sin+Foto' }}
-                          />
+                    if (citasDelDia.length === 0) {
+                      return (
+                        <div className="text-center py-10 border border-dashed border-zinc-800 rounded-2xl">
+                          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">No hay citas en esta fecha</p>
                         </div>
-                        <div className="flex-1 flex flex-col justify-center overflow-hidden">
-                          <div className="flex justify-between items-start mb-1">
-                            <h4 className="text-white font-black uppercase text-sm tracking-tighter truncate pr-2">
-                              {cliente}
-                            </h4>
-                            <span className="bg-zinc-900 border border-zinc-800 text-emerald-400 px-2 py-1 rounded-lg text-[9px] font-black tracking-widest whitespace-nowrap shadow-inner">
-                              {horaFormateada}
-                            </span>
-                          </div>
-                          <p className="text-emerald-500 font-bold text-[9px] uppercase tracking-widest">
-                            {zona} • {tamano}
-                          </p>
-                          <p className="text-zinc-500 text-[10px] italic mt-2 line-clamp-2 bg-black/40 p-2 rounded-lg border border-zinc-800/50 leading-relaxed">
-                            "{idea}"
-                          </p>
+                      );
+                    }
 
-                          <div className="mt-3 flex flex-col gap-2">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); finalizarCita(cita.id); }}
-                              className="w-full bg-emerald-500 text-black py-2.5 rounded-xl font-black text-[10px] uppercase transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:bg-emerald-400"
-                            >
-                              ✅ Terminar Sesión y Enviar Cuidados
-                            </button>
-                            
-                            <div className="flex gap-2">
+                    return citasDelDia.map((cita) => {
+                      const fechaObj = new Date(cita.fecha_inicio);
+                      const horaFormateada = fechaObj.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                      const cliente = cita.cliente || cita.cotizacion?.cliente || 'Cliente Anónimo';
+                      const zona = cita.zona_cuerpo || cita.cotizacion?.zona_cuerpo || 'ZONA N/A';
+                      const tamano = cita.tamano_cm || cita.cotizacion?.tamano_cm || 'TAMAÑO N/A';
+                      const idea = cita.idea || cita.cotizacion?.descripcion_idea || cita.cotizacion?.idea || 'Sin descripción técnica';
+                      const fotoUrl = getImagenUrl(cita.imagen_url || cita.cotizacion?.imagen_url);
+
+                      return (
+                        <div key={cita.id} className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 hover:border-emerald-500/50 transition-all shadow-lg group">
+                          <div className="w-full md:w-20 h-32 md:h-20 flex-shrink-0 relative overflow-hidden rounded-xl border border-zinc-800">
+                            <img 
+                              src={fotoUrl} 
+                              alt="Referencia" 
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-80 group-hover:opacity-100" 
+                              onError={(e) => { e.target.src = 'https://placehold.co/150x150/18181b/10b981?text=Sin+Foto' }}
+                            />
+                          </div>
+                          <div className="flex-1 flex flex-col justify-center overflow-hidden">
+                            <div className="flex justify-between items-start mb-1">
+                              <h4 className="text-white font-black uppercase text-sm tracking-tighter truncate pr-2">
+                                {cliente}
+                              </h4>
+                              <span className="bg-zinc-900 border border-zinc-800 text-emerald-400 px-2 py-1 rounded-lg text-[9px] font-black tracking-widest whitespace-nowrap shadow-inner">
+                                {horaFormateada}
+                              </span>
+                            </div>
+                            <p className="text-emerald-500 font-bold text-[9px] uppercase tracking-widest">
+                              {zona} • {tamano}
+                            </p>
+                            <p className="text-zinc-500 text-[10px] italic mt-2 line-clamp-2 bg-black/40 p-2 rounded-lg border border-zinc-800/50 leading-relaxed">
+                              "{idea}"
+                            </p>
+
+                            <div className="mt-3 flex flex-col gap-2">
                               <button 
-                                onClick={(e) => { e.stopPropagation(); setModalReagendar({ abierto: true, cita: cita }); }}
-                                className="flex-1 bg-zinc-900 border border-zinc-800 hover:border-emerald-500 hover:text-emerald-400 text-zinc-500 py-2 rounded-xl font-black text-[9px] uppercase transition-colors"
+                                onClick={(e) => { e.stopPropagation(); finalizarCita(cita.id); }}
+                                className="w-full bg-emerald-500 text-black py-2.5 rounded-xl font-black text-[10px] uppercase transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:bg-emerald-400"
                               >
-                                Reprogramar
+                                ✅ Terminar Sesión y Enviar Cuidados
                               </button>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); eliminarCita(cita.id); }}
-                                className="flex-1 bg-zinc-900 border border-zinc-800 hover:border-red-500 hover:text-red-400 text-zinc-500 py-2 rounded-xl font-black text-[9px] uppercase transition-colors"
-                              >
-                                Eliminar
-                              </button>
+                              
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setModalReagendar({ abierto: true, cita: cita }); }}
+                                  className="flex-1 bg-zinc-900 border border-zinc-800 hover:border-emerald-500 hover:text-emerald-400 text-zinc-500 py-2 rounded-xl font-black text-[9px] uppercase transition-colors"
+                                >
+                                  Reprogramar
+                                </button>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); eliminarCita(cita.id); }}
+                                  className="flex-1 bg-zinc-900 border border-zinc-800 hover:border-red-500 hover:text-red-400 text-zinc-500 py-2 rounded-xl font-black text-[9px] uppercase transition-colors"
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  });
-                })()}
+                      );
+                    });
+                  })()}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {modalReagendar.abierto && (
           <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 z-[60] text-white">
