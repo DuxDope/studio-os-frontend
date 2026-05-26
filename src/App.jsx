@@ -330,6 +330,7 @@ function Sidebar({ children }) {
     { nombre: 'Mesa de Trabajo', ruta: '/admin', icono: '🖋️' },
     { nombre: 'Mi Agenda', ruta: '/calendario', icono: '📅' },
     { nombre: 'Portafolio & Promos', ruta: '/gestor', icono: '🎨' },
+    { nombre: 'Configuración Studio', ruta: '/configuracion', icono: '⚙️' },
   ];
 
   return (
@@ -395,6 +396,87 @@ function Sidebar({ children }) {
       }`}>
         {children}
       </main>
+    </div>
+  );
+}
+
+function ConfiguracionStudio() {
+  const [dias, setDias] = useState([
+    { nombre: 'Lunes', activo: true },
+    { nombre: 'Martes', activo: true },
+    { nombre: 'Miércoles', activo: true },
+    { nombre: 'Jueves', activo: true },
+    { nombre: 'Viernes', activo: true },
+    { nombre: 'Sábado', activo: false },
+    { nombre: 'Domingo', activo: false },
+  ]);
+  const [horaInicio, setHoraInicio] = useState('10:00');
+  const [horaFin, setHoraFin] = useState('19:00');
+  const [guardado, setGuardado] = useState(false);
+
+  const toggleDia = (index) => {
+    const nuevosDias = [...dias];
+    nuevosDias[index].activo = !nuevosDias[index].activo;
+    setDias(nuevosDias);
+  };
+
+  const guardarConfiguracion = (e) => {
+    e.preventDefault();
+    setGuardado(true);
+    setTimeout(() => setGuardado(false), 3000);
+    // Nota para después de la demo: Aquí irá el axios.post para guardar en base de datos.
+  };
+
+  return (
+    <div className="p-4 md:p-8 max-w-4xl mx-auto text-white">
+      <header className="mb-10">
+        <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">AJUSTES DEL <span className="text-emerald-400">STUDIO</span></h2>
+        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Define cuándo estás disponible para tatuar</p>
+      </header>
+
+      <form onSubmit={guardarConfiguracion} className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl shadow-xl space-y-8">
+        
+        {/* Días de trabajo */}
+        <div>
+          <h3 className="font-black text-xl text-emerald-400 mb-4 uppercase">Días Hábiles</h3>
+          <div className="flex flex-wrap gap-3">
+            {dias.map((dia, index) => (
+              <button
+                key={dia.nombre}
+                type="button"
+                onClick={() => toggleDia(index)}
+                className={`px-4 py-2 rounded-xl font-black text-xs uppercase transition-all ${
+                  dia.activo ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-black border border-zinc-800 text-zinc-500 hover:border-zinc-600'
+                }`}
+              >
+                {dia.nombre}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Horarios */}
+        <div className="pt-6 border-t border-zinc-800">
+          <h3 className="font-black text-xl text-emerald-400 mb-4 uppercase">Rango de Horas</h3>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-2">Apertura (Primera Cita)</label>
+              <input type="time" value={horaInicio} onChange={e => setHoraInicio(e.target.value)} className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none focus:border-emerald-500 [&::-webkit-calendar-picker-indicator]:invert" />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block mb-2">Cierre (Última Cita)</label>
+              <input type="time" value={horaFin} onChange={e => setHoraFin(e.target.value)} className="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none focus:border-emerald-500 [&::-webkit-calendar-picker-indicator]:invert" />
+            </div>
+          </div>
+        </div>
+
+        {/* Botón Guardar */}
+        <div className="pt-6">
+          <button type="submit" className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${guardado ? 'bg-zinc-800 text-emerald-400 border border-emerald-500' : 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-lg'}`}>
+            {guardado ? '✓ HORARIO ACTUALIZADO' : 'GUARDAR HORARIO COMERCIAL'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -1353,6 +1435,7 @@ export default function App() {
         <Route path="/admin" element={<RutaProtegida><Sidebar><AdminPanel /></Sidebar></RutaProtegida>} />
         <Route path="/calendario" element={<RutaProtegida><Sidebar><Calendario /></Sidebar></RutaProtegida>} />
         <Route path="/gestor" element={<RutaProtegida><Sidebar><GestorContenido /></Sidebar></RutaProtegida>} />
+        <Route path="/configuracion" element={<RutaProtegida><Sidebar><ConfiguracionStudio /></Sidebar></RutaProtegida>} />
       </Routes>
     </BrowserRouter>
   )
