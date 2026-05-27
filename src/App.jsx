@@ -586,7 +586,7 @@ function AdminPanel() {
     try {
       await axios.patch(`/cotizaciones/${modal.cot.id}/responder`, fd);
       const linkReserva = `${window.location.origin}/reserva/${modal.cot.id}`;
-      const textoPresupuesto = `¡Hola ${modal.cot.cliente}! Revisé tu idea para el tatuaje. El valor estimado es de $${respuesta.precio} y nos tomaría unas ${respuesta.horas} horas de sesión. ${respuesta.notas ? '\nNotas técnicas: ' + respuesta.notas : ''}\n\nPara confirmar tu diseño y elegir tu hora, entra a tu link personal:\n${linkReserva}`;
+      const textoPresupuesto = `¡Hola ${modal.cot.cliente}! Revisé tu idea para el tatuaje 🎨.\n\nEl valor total estimado es de $${respuesta.precio} y nos tomaría unas ${respuesta.horas} horas de sesión. ${respuesta.notas ? '\nNotas técnicas: ' + respuesta.notas : ''}\n\nPara asegurar tu hora en la agenda, solicitamos un abono previo (que se descuenta del total). Por favor confírmame por este medio para enviarte los datos de transferencia bancaria 💸.\n\nUna vez realizado el abono, el sistema te liberará este link personal para que elijas el día y la hora que más te acomoden:\n${linkReserva}`;
       if (metodo === 'whatsapp') {
         window.open(`https://wa.me/${modal.cot.telefono.replace(/\+/g, '')}?text=${encodeURIComponent(textoPresupuesto)}`, '_blank');
       } else if (metodo === 'email') {
@@ -1263,7 +1263,7 @@ function PortalCliente() {
       setHoraSel('');
       try {
         const url = `/citas/disponibilidad/${fechaSeleccionada}?tatuador_id=${cot.tatuador_id}`;
-        const res = await axios.get(`/citas/disponibilidad/${fechaSeleccionada}`);
+        const res = await axios.get(url);
         setHorasDisponibles(res.data.horas_disponibles);
       } catch (err) {
         setHorasDisponibles([]);
