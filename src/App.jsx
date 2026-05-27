@@ -35,7 +35,7 @@ const RutaProtegida = ({ children }) => {
 // -------------------------------------------------------------------------
 function Inicio() {
   const [contenido, setContenido] = useState({ promociones: [], galeria: [] });
-  const [vista, setVista] = useState('inicio'); // Vistas posibles: 'inicio', 'promos', 'galeria'
+  const [vista, setVista] = useState('inicio');
 
   useEffect(() => {
     axios.get('/contenido/publico')
@@ -45,8 +45,6 @@ function Inicio() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col relative overflow-x-hidden">
-      
-      {/* HEADER DE NAVEGACIÓN INTELIGENTE */}
       <header className="absolute top-0 w-full p-6 flex justify-between items-center z-20">
         {vista !== 'inicio' ? (
           <button 
@@ -64,7 +62,6 @@ function Inicio() {
         </Link>
       </header>
 
-      {/* VISTA 1: MENÚ PRINCIPAL (PANTALLA LIMPIA SIN SCROLL) */}
       {vista === 'inicio' && (
         <div className="flex-grow flex flex-col items-center justify-center p-4 w-full max-w-sm mx-auto animate-in fade-in duration-300">
           <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-2 text-emerald-400 uppercase drop-shadow-[0_0_15px_rgba(16,185,129,0.2)] text-center italic">
@@ -73,8 +70,6 @@ function Inicio() {
           <p className="text-xs text-zinc-500 mb-12 text-center max-w-xs italic tracking-wide">
             Convierte tu idea en arte. Elige una opción abajo.
           </p>
-          
-          {/* PANEL DE ACCIONES DIRECTAS EN MÓVIL */}
           <div className="flex flex-col gap-3 w-full">
             <Link 
               to="/cotizar" 
@@ -102,12 +97,10 @@ function Inicio() {
         </div>
       )}
 
-      {/* VISTA 2: LISTA DE PROMOCIONES */}
       {vista === 'promos' && (
         <div className="flex-grow px-4 pt-28 pb-16 max-w-xl mx-auto w-full animate-in slide-in-from-bottom duration-300">
           <h2 className="text-center text-3xl font-black mb-1 italic uppercase tracking-tighter text-emerald-400">Promociones Flash</h2>
           <p className="text-center text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-10">Diseños listos para tatuar a precio cerrado</p>
-          
           <div className="flex flex-col gap-4">
             {contenido.promociones.map(p => (
               <div key={p.id} className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 flex justify-between items-center shadow-md">
@@ -125,12 +118,10 @@ function Inicio() {
         </div>
       )}
 
-      {/* VISTA 3: GALERÍA DE ARTE */}
       {vista === 'galeria' && (
         <div className="flex-grow px-4 pt-28 pb-16 max-w-4xl mx-auto w-full animate-in slide-in-from-bottom duration-300">
           <h2 className="text-center text-3xl font-black mb-1 italic uppercase tracking-tighter text-white">Nuestro Portafolio</h2>
           <p className="text-center text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-10">Galería oficial del estudio</p>
-          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {contenido.galeria && contenido.galeria.map((foto, index) => (
               <div key={index} className="aspect-square bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 shadow-md">
@@ -142,18 +133,15 @@ function Inicio() {
               </div>
             ))}
           </div>
-          
           {(!contenido.galeria || contenido.galeria.length === 0) && (
             <p className="text-center text-zinc-600 text-xs font-black uppercase tracking-widest py-20">No hay fotos subidas todavía</p>
           )}
         </div>
       )}
-      
     </div>
   )
 }
 
-// 4. PANTALLA DE LOGIN
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -189,7 +177,6 @@ function Login() {
   );
 }
 
-// 5. FORMULARIO DE CLIENTE (PÚBLICO)
 function Formulario() {
   const [formData, setFormData] = useState({ 
     nombre: '', telefono: '', email: '', instagram: '',
@@ -207,14 +194,12 @@ function Formulario() {
     setMensaje('');
     try {
       const infoContacto = `Preferencia: ${formData.contacto_pref.toUpperCase()} | IG: ${formData.instagram || 'No ingresado'}`;
-      
       const resCliente = await axios.post('/clientes/', {
         nombre_completo: formData.nombre, 
         telefono: formData.telefono, 
         email: formData.email, 
         notas_medicas: infoContacto
       })
-      
       const cotData = new FormData();
       cotData.append('cliente_id', resCliente.data.id);
       cotData.append('descripcion_idea', formData.idea);
@@ -240,21 +225,16 @@ function Formulario() {
         <Link to="/" className="text-zinc-500 font-bold text-xs uppercase hover:text-emerald-400 transition-colors mb-6 inline-block">
           ← Volver al inicio
         </Link>
-
         <div className="bg-zinc-900 p-8 rounded-3xl border border-zinc-800 shadow-2xl">
           <h2 className="text-3xl font-black text-emerald-400 mb-2 text-center italic uppercase tracking-tighter">COTIZAR IDEA</h2>
           <p className="text-zinc-500 text-xs text-center mb-8 font-bold">Completa los datos para evaluar tu diseño</p>
-          
           <form onSubmit={handleSubmit} className="space-y-5">
             <input required name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Nombre completo" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500 transition-colors" />
-            
             <div className="grid grid-cols-2 gap-4">
               <input required name="telefono" value={formData.telefono} onChange={handleChange} placeholder="WhatsApp (+569...)" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500 transition-colors" />
               <input name="instagram" value={formData.instagram} onChange={handleChange} placeholder="Instagram (@usuario)" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500 transition-colors" />
             </div>
-            
             <input required type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Correo electrónico" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500 transition-colors" />
-
             <div className="space-y-2 pt-2 border-t border-zinc-800/50">
               <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Quiero recibir el presupuesto por:</label>
               <div className="grid grid-cols-3 gap-2">
@@ -270,14 +250,11 @@ function Formulario() {
                 ))}
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4 pt-2 border-t border-zinc-800/50">
               <input required name="zona" value={formData.zona} onChange={handleChange} placeholder="Zona (ej. Antebrazo)" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500 transition-colors" />
               <input required name="tamano" value={formData.tamano} onChange={handleChange} placeholder="Tamaño (ej. 15x10 cm)" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500 transition-colors" />
             </div>
-
             <textarea required name="idea" value={formData.idea} onChange={handleChange} placeholder="Describe tu diseño, estilo, colores..." rows="3" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none focus:border-emerald-500 transition-colors resize-none" />
-            
             <div className="relative">
               <input required type="file" id="archivo" accept="image/*" onChange={(e) => setImagen(e.target.files[0])} className="hidden" />
               <label htmlFor="archivo" className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
@@ -292,11 +269,9 @@ function Formulario() {
                 </div>
               </label>
             </div>
-
             <button type="submit" disabled={cargando} className="w-full py-4 rounded-xl font-black bg-emerald-500 text-black hover:bg-emerald-400 uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(16,185,129,0.2)]">
               {cargando ? 'ENVIANDO DATOS...' : 'ENVIAR COTIZACIÓN'}
             </button>
-
             {mensaje && (
               <div className="bg-zinc-950 border border-emerald-500/30 p-3 rounded-xl mt-4">
                 <p className="text-center text-emerald-400 font-bold uppercase text-[10px] tracking-widest">{mensaje}</p>
@@ -312,11 +287,8 @@ function Formulario() {
 function Sidebar({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Lógica inteligente: Si la pantalla es grande (PC), inicia abierto. Si es móvil, inicia cerrado.
   const [menuAbierto, setMenuAbierto] = useState(window.innerWidth > 768);
 
-  // Efecto para que se ajuste automáticamente si el usuario gira el celular o achica la ventana
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 768) setMenuAbierto(false);
@@ -335,8 +307,6 @@ function Sidebar({ children }) {
 
   return (
     <div className="flex min-h-screen bg-zinc-950 text-white relative overflow-hidden">
-      
-      {/* BOTÓN HAMBURGUESA (Ahora es visible en PC y Móvil) */}
       <button 
         onClick={() => setMenuAbierto(!menuAbierto)}
         className="fixed top-4 left-4 z-[70] bg-zinc-900 border border-zinc-800 p-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-colors"
@@ -344,7 +314,6 @@ function Sidebar({ children }) {
         <span className="text-xl leading-none">{menuAbierto ? '✕' : '☰'}</span>
       </button>
 
-      {/* FONDO OSCURO (Solo en celular para que no estorbe el contenido al abrir) */}
       {menuAbierto && (
         <div 
           onClick={() => setMenuAbierto(false)}
@@ -352,22 +321,17 @@ function Sidebar({ children }) {
         ></div>
       )}
 
-      {/* MENÚ LATERAL (Ocultable en todas las pantallas) */}
       <aside className={`fixed top-0 left-0 h-screen w-64 bg-zinc-900 border-r border-zinc-800 p-6 flex flex-col z-[60] transition-transform duration-300 ease-in-out ${
         menuAbierto ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        
-        {/* Espacio extra arriba para que el texto no choque con el botón de la ✕ */}
         <div className="flex justify-start items-center mb-10 mt-14">
           <h1 className="text-2xl font-black text-emerald-400 italic tracking-tighter uppercase pl-2">STUDIO OS</h1>
         </div>
-        
         <nav className="flex flex-col gap-2">
           {menuItems.map((item) => (
             <Link
               key={item.ruta}
               to={item.ruta}
-              // En celular, cerramos el menú al hacer clic en una ruta. En PC lo dejamos abierto.
               onClick={() => { if(window.innerWidth <= 768) setMenuAbierto(false) }}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${
                 location.pathname === item.ruta 
@@ -380,7 +344,6 @@ function Sidebar({ children }) {
             </Link>
           ))}
         </nav>
-        
         <button 
           onClick={() => { localStorage.clear(); navigate('/login'); }}
           className="mt-auto flex items-center gap-3 px-4 py-3 text-red-500 font-bold text-sm hover:bg-red-500/10 rounded-xl transition-all"
@@ -388,9 +351,6 @@ function Sidebar({ children }) {
           <span>🚪</span> Salir
         </button>
       </aside>
-      
-      {/* CONTENEDOR PRINCIPAL */}
-      {/* En PC, si el menú está abierto, empujamos el contenido a la derecha (md:ml-64). Si está cerrado, ocupa todo. */}
       <main className={`flex-grow w-full p-4 pt-20 md:p-8 md:pt-20 h-screen overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out ${
         menuAbierto ? 'md:ml-64' : 'ml-0'
       }`}>
@@ -424,7 +384,6 @@ function ConfiguracionStudio() {
     e.preventDefault();
     setGuardado(true);
     setTimeout(() => setGuardado(false), 3000);
-    // Nota para después de la demo: Aquí irá el axios.post para guardar en base de datos.
   };
 
   return (
@@ -435,8 +394,6 @@ function ConfiguracionStudio() {
       </header>
 
       <form onSubmit={guardarConfiguracion} className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl shadow-xl space-y-8">
-        
-        {/* Días de trabajo */}
         <div>
           <h3 className="font-black text-xl text-emerald-400 mb-4 uppercase">Días Hábiles</h3>
           <div className="flex flex-wrap gap-3">
@@ -455,7 +412,6 @@ function ConfiguracionStudio() {
           </div>
         </div>
 
-        {/* Horarios */}
         <div className="pt-6 border-t border-zinc-800">
           <h3 className="font-black text-xl text-emerald-400 mb-4 uppercase">Rango de Horas</h3>
           <div className="grid grid-cols-2 gap-6">
@@ -470,7 +426,6 @@ function ConfiguracionStudio() {
           </div>
         </div>
 
-        {/* Botón Guardar */}
         <div className="pt-6">
           <button type="submit" className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${guardado ? 'bg-zinc-800 text-emerald-400 border border-emerald-500' : 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-lg'}`}>
             {guardado ? '✓ HORARIO ACTUALIZADO' : 'GUARDAR HORARIO COMERCIAL'}
@@ -481,20 +436,17 @@ function ConfiguracionStudio() {
   );
 }
 
-// 6. PANEL DE ADMINISTRACIÓN (PRIVADO)
 function AdminPanel() {
   const [cotizaciones, setCotizaciones] = useState([])
   const [cargando, setCargando] = useState(true)
-  
+  const [tatuadores, setTatuadores] = useState([]);
   const [filtroEstado, setFiltroEstado] = useState('pendiente');
-  
   const [modal, setModal] = useState({ abierto: false, cot: null })
   const [modalAgenda, setModalAgenda] = useState({ abierto: false, cot: null })
-  
   const [respuesta, setRespuesta] = useState({ precio: '', horas: '', notas: '' })
-  const [nuevaCita, setNuevaCita] = useState({ fecha: '' })
-  
+  const [nuevaCita, setNuevaCita] = useState({ fecha: '', tatuador_id: '' })
   const [fotoFull, setFotoFull] = useState(null)
+  
   const navigate = useNavigate();
 
   const getFechaMinima = () => {
@@ -507,6 +459,12 @@ function AdminPanel() {
     try {
       const res = await axios.get('/cotizaciones/mesa-trabajo')
       setCotizaciones(res.data)
+      try {
+        const resArtistas = await axios.get('/usuarios/lista-tatuadores'); 
+        setTatuadores(resArtistas.data);
+      } catch (e) {
+        console.log("Ruta tatuadores no lista aún", e);
+      }
     } catch (err) { 
       if(err.response?.status === 401) navigate('/login'); 
     } finally { 
@@ -554,6 +512,7 @@ function AdminPanel() {
   const confirmarCita = async (e) => {
     if (e) e.preventDefault();
     if (!nuevaCita.fecha) return alert("Por favor selecciona una fecha y hora.");
+    if (!nuevaCita.tatuador_id) return alert("Por favor asigna un tatuador.");
 
     const fechaSeleccionada = new Date(nuevaCita.fecha);
     const ahora = new Date();
@@ -568,12 +527,13 @@ function AdminPanel() {
       await axios.post('/citas/', {
         cotizacion_id: modalAgenda.cot.id,
         fecha_inicio: inicio.toISOString(),
-        fecha_fin: fin.toISOString()
+        fecha_fin: fin.toISOString(),
+        tatuador_id: nuevaCita.tatuador_id
       });
 
       alert("✅ Sesión agendada con éxito");
       setModalAgenda({ abierto: false, cot: null });
-      setNuevaCita({ fecha: '' });
+      setNuevaCita({ fecha: '', tatuador_id: '' });
       obtenerDatos();
     } catch (err) { 
       console.error(err);
@@ -732,6 +692,7 @@ function AdminPanel() {
                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Cliente</p>
                 <p className="text-white font-bold uppercase">{modalAgenda.cot?.cliente}</p>
               </div>
+              
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-blue-400/70 uppercase tracking-widest ml-1">Fecha y Hora</label>
                 <div className="relative">
@@ -740,10 +701,26 @@ function AdminPanel() {
                     min={getFechaMinima()}
                     onClick={(e) => e.target.showPicker()}
                     className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-blue-500 transition-all cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    onChange={(e) => setNuevaCita({ fecha: e.target.value })}
+                    onChange={(e) => setNuevaCita({ ...nuevaCita, fecha: e.target.value })}
                   />
                 </div>
               </div>
+
+              {/* INICIO DEL SELECTOR DE TATUADOR */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-blue-400/70 uppercase tracking-widest ml-1">Asignar Tatuador</label>
+                <select 
+                  className="w-full bg-black border border-zinc-800 p-4 rounded-2xl text-white outline-none focus:border-blue-500 transition-all"
+                  onChange={(e) => setNuevaCita({...nuevaCita, tatuador_id: e.target.value})}
+                >
+                  <option value="">Selecciona artista...</option>
+                  {tatuadores.map(t => (
+                    <option key={t.id} value={t.id}>{t.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              {/* FIN DEL SELECTOR */}
+
               <div className="grid grid-cols-2 gap-3 pt-4">
                 <button onClick={() => setModalAgenda({ abierto: false, cot: null })} className="bg-zinc-800 text-zinc-400 py-4 rounded-2xl font-black text-[10px] uppercase">Cancelar</button>
                 <button onClick={confirmarCita} className="bg-blue-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg hover:bg-blue-500">Confirmar</button>
