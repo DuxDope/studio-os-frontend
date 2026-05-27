@@ -547,7 +547,7 @@ function AdminPanel() {
   const [modal, setModal]           = useState({ abierto: false, cot: null })
   const [modalAgenda, setModalAgenda] = useState({ abierto: false, cot: null })
 
-  const [respuesta, setRespuesta] = useState({ precio: '', horas: '', notas: '' })
+  const [respuesta, setRespuesta] = useState({ precio: '', horas: '', notas: '', tatuador_id: '' })
   const [nuevaCita, setNuevaCita] = useState({ fecha: '', tatuador_id: '' })
 
   const [fotoFull, setFotoFull] = useState(null)
@@ -582,6 +582,7 @@ function AdminPanel() {
     fd.append('precio', respuesta.precio);
     fd.append('horas', respuesta.horas);
     fd.append('notas', respuesta.notas);
+    fd.append('tatuador_id', respuesta.tatuador_id);
     try {
       await axios.patch(`/cotizaciones/${modal.cot.id}/responder`, fd);
       const linkReserva = `${window.location.origin}/reserva/${modal.cot.id}`;
@@ -734,6 +735,7 @@ function AdminPanel() {
                 <h3 className="text-2xl font-black text-emerald-400 italic uppercase tracking-tighter">Presupuestar</h3>
                 <button onClick={() => setModal({ abierto: false, cot: null })} className="text-zinc-600 hover:text-white font-black">✕</button>
               </div>
+              
               <div className="bg-black/50 p-5 rounded-2xl text-xs space-y-3 border border-zinc-800">
                 <p><span className="text-zinc-500 font-black tracking-widest uppercase text-[10px]">CLIENTE:</span> <br /><span className="font-bold text-sm text-white">{modal.cot?.cliente}</span></p>
                 <p><span className="text-zinc-500 font-black tracking-widest uppercase text-[10px]">ZONA Y TAMAÑO:</span> <br /><span className="font-bold text-emerald-400">{modal.cot?.zona_cuerpo} • {modal.cot?.tamano_cm}</span></p>
@@ -742,11 +744,22 @@ function AdminPanel() {
                   <p className="text-emerald-400 font-bold"><span className="text-zinc-500 font-black tracking-widest uppercase text-[10px]">CONTACTO / NOTAS:</span> <br />{modal.cot?.notas_medicas || 'Sin notas'}</p>
                 </div>
               </div>
+              
               <div className="space-y-3 pt-2">
+                {/* 👇 AQUÍ ESTÁ EL SELECTOR INYECTADO 👇 */}
+                <select 
+                  className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm text-white cursor-pointer"
+                  onChange={e => setRespuesta({...respuesta, tatuador_id: e.target.value})}
+                >
+                  <option value="">👤 Asignar Tatuador al proyecto...</option>
+                  {tatuadores.map(t => <option key={t.id} value={t.id}>{t.nombre || t.email}</option>)}
+                </select>
+
                 <input placeholder="Precio Fijo ($)" type="number" onChange={e => setRespuesta({ ...respuesta, precio: e.target.value })} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm" />
                 <input placeholder="Horas de sesión (Ej: 3)" type="number" onChange={e => setRespuesta({ ...respuesta, horas: e.target.value })} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm" />
                 <textarea placeholder="Notas técnicas para el cliente..." onChange={e => setRespuesta({ ...respuesta, notas: e.target.value })} className="w-full bg-black border border-zinc-800 p-4 rounded-xl h-20 outline-none focus:border-emerald-500 transition-all text-sm resize-none" />
               </div>
+              
               <div className="flex gap-2 pt-2">
                 <button onClick={() => enviarRespuesta('whatsapp')} className="flex-1 bg-green-500/10 hover:bg-green-500/20 transition-all text-green-400 py-4 rounded-xl font-black text-[10px] uppercase border border-green-500/20 tracking-widest">WSP & Link</button>
                 <button onClick={() => enviarRespuesta('instagram')} className="flex-1 bg-pink-500/10 hover:bg-pink-500/20 transition-all text-pink-400 py-4 rounded-xl font-black text-[10px] uppercase border border-pink-500/20 tracking-widest">IG & Link</button>
@@ -1249,6 +1262,7 @@ function PortalCliente() {
       setBuscandoHoras(true);
       setHoraSel('');
       try {
+        const url = `/citas/disponibilidad/${fechaSeleccionada}?tatuador_id=${cot.tatuador_id}`;
         const res = await axios.get(`/citas/disponibilidad/${fechaSeleccionada}`);
         setHorasDisponibles(res.data.horas_disponibles);
       } catch (err) {
