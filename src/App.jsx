@@ -547,7 +547,7 @@ function AdminPanel() {
   const [modal, setModal]           = useState({ abierto: false, cot: null })
   const [modalAgenda, setModalAgenda] = useState({ abierto: false, cot: null })
 
-  const [respuesta, setRespuesta] = useState({ precio: '', horas: '', notas: '', tatuador_id: '' })
+  const [respuesta, setRespuesta] = useState({ precio: '', horas: '', notas: '', tatuador_id: '', abono_requerido: '' })
   const [nuevaCita, setNuevaCita] = useState({ fecha: '', tatuador_id: '' })
 
   const [fotoFull, setFotoFull] = useState(null)
@@ -575,29 +575,35 @@ function AdminPanel() {
   useEffect(() => { obtenerDatos() }, [])
 
   const enviarRespuesta = async (metodo) => {
-    if (!respuesta.precio || !respuesta.horas) {
-      return alert("Por favor ingresa el precio y las horas estimadas.");
+    // Validamos que no se le olvide el abono
+    if (!respuesta.precio || !respuesta.horas || !respuesta.tatuador_id || !respuesta.abono_requerido) {
+      return alert("Por favor ingresa precio, abono requerido, horas y asigna un tatuador.");
     }
     const fd = new FormData();
     fd.append('precio', respuesta.precio);
     fd.append('horas', respuesta.horas);
     fd.append('notas', respuesta.notas);
     fd.append('tatuador_id', respuesta.tatuador_id);
+    
     try {
       await axios.patch(`/cotizaciones/${modal.cot.id}/responder`, fd);
       const linkReserva = `${window.location.origin}/reserva/${modal.cot.id}`;
-      const textoPresupuesto = `¡Hola ${modal.cot.cliente}! Revisé tu idea para el tatuaje 🎨.\n\nEl valor total estimado es de $${respuesta.precio} y nos tomaría unas ${respuesta.horas} horas de sesión. ${respuesta.notas ? '\nNotas técnicas: ' + respuesta.notas : ''}\n\nPara asegurar tu hora en la agenda, solicitamos un abono previo (que se descuenta del total). Por favor confírmame por este medio para enviarte los datos de transferencia bancaria 💸.\n\nUna vez realizado el abono, el sistema te liberará este link personal para que elijas el día y la hora que más te acomoden:\n${linkReserva}`;
+      
+      // Armamos el mensaje con el valor del abono
+      const textoPresupuesto = `¡Hola ${modal.cot.cliente}! Revisé tu idea para el tatuaje 🎨.\n\nEl valor total estimado es de $${respuesta.precio} y nos tomaría unas ${respuesta.horas} horas de sesión. ${respuesta.notas ? '\nNotas técnicas: ' + respuesta.notas : ''}\n\nPara asegurar tu hora en la agenda, solicitamos un abono previo de $${respuesta.abono_requerido} (que se descuenta del total). Por favor confírmame por este medio para enviarte los datos de transferencia bancaria 💸.\n\nUna vez realizado el abono, el sistema te liberará este link personal para que elijas el día y la hora que más te acomoden:\n${linkReserva}`;
+
       if (metodo === 'whatsapp') {
         window.open(`https://wa.me/${modal.cot.telefono.replace(/\+/g, '')}?text=${encodeURIComponent(textoPresupuesto)}`, '_blank');
       } else if (metodo === 'email') {
-        window.open(`mailto:?subject=Tu Cotización de Tatuaje en Studio OS&body=${encodeURIComponent(textoPresupuesto)}`, '_blank');
+        window.open(`mailto:?subject=Presupuesto de Tatuaje - Studio OS&body=${encodeURIComponent(textoPresupuesto)}`, '_blank');
       } else if (metodo === 'instagram') {
         navigator.clipboard.writeText(textoPresupuesto);
         alert("✅ Mensaje copiado. Se abrirá Instagram, busca al cliente y pega el mensaje.");
         window.open(`https://www.instagram.com/direct/inbox/`, '_blank');
       }
+      
       setModal({ abierto: false, cot: null });
-      setRespuesta({ precio: '', horas: '', notas: '' });
+      setRespuesta({ precio: '', horas: '', notas: '', tatuador_id: '', abono_requerido: '' });
       obtenerDatos();
     } catch (err) {
       alert("Error al guardar la respuesta en la base de datos.");
@@ -746,7 +752,6 @@ function AdminPanel() {
               </div>
               
               <div className="space-y-3 pt-2">
-                {/* 👇 AQUÍ ESTÁ EL SELECTOR INYECTADO 👇 */}
                 <select 
                   className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm text-white cursor-pointer"
                   onChange={e => setRespuesta({...respuesta, tatuador_id: e.target.value})}
@@ -755,7 +760,11 @@ function AdminPanel() {
                   {tatuadores.map(t => <option key={t.id} value={t.id}>{t.nombre || t.email}</option>)}
                 </select>
 
-                <input placeholder="Precio Fijo ($)" type="number" onChange={e => setRespuesta({ ...respuesta, precio: e.target.value })} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm" />
+                <div className="grid grid-cols-2 gap-3">
+                  <input placeholder="Precio Total ($)" type="number" onChange={e => setRespuesta({ ...respuesta, precio: e.target.value })} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm" />
+                  <input placeholder="Abono a pedir ($)" type="number" onChange={e => setRespuesta({ ...respuesta, abono_requerido: e.target.value })} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm border-emerald-500/30" />
+                </div>
+                
                 <input placeholder="Horas de sesión (Ej: 3)" type="number" onChange={e => setRespuesta({ ...respuesta, horas: e.target.value })} className="w-full bg-black border border-zinc-800 p-4 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm" />
                 <textarea placeholder="Notas técnicas para el cliente..." onChange={e => setRespuesta({ ...respuesta, notas: e.target.value })} className="w-full bg-black border border-zinc-800 p-4 rounded-xl h-20 outline-none focus:border-emerald-500 transition-all text-sm resize-none" />
               </div>
